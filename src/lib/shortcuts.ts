@@ -84,6 +84,7 @@ export const shortcutCategories: ShortcutCategory[] = [
       { keys: ["[[Note]]"], description: "Wikilink" },
       { keys: ["![alt](url)"], description: "Image" },
       { keys: ["| | |"], description: "Table" },
+      { keys: ["$...$"], description: "Inline math" },
       { keys: ["$$...$$"], description: "Block math" },
       { keys: ["```mermaid"], description: "Mermaid diagram" },
     ],
