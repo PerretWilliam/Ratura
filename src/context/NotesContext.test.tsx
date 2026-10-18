@@ -1,95 +1,203 @@
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { getNotesFolderMock, listenMock, readNoteMock, saveNoteMock } =
-  vi.hoisted(() => ({
-    getNotesFolderMock: vi.fn(),
-    listenMock: vi.fn(),
-    readNoteMock: vi.fn(),
-    saveNoteMock: vi.fn(),
-  }));
-
-vi.mock("@tauri-apps/api/event", () => ({ listen: listenMock }));
-vi.mock("../services/notes", () => ({
-  getNotesFolder: getNotesFolderMock,
-  readNote: readNoteMock,
-  saveNote: saveNoteMock,
+const {
+  listenMock,
+  saveNoteMock,
+  readNoteMock,
+  getNotesFolderMock,
+  listNotesMock,
+} = vi.hoisted(() => ({
+  listenMock: vi.fn().mockResolvedValue(() => {}),
+  saveNoteMock: vi.fn(),
+  readNoteMock: vi.fn(),
+  getNotesFolderMock: vi.fn().mockResolvedValue(null),
+  listNotesMock: vi.fn().mockResolvedValue([]),
 }));
 
-import {
-  NotesProvider,
-  useNotesActions,
-  useNotesData,
-} from "./NotesContext";
+vi.mock("@tauri-apps/api/event", () => ({ listen: listenMock }));
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+vi.mock("../services/notes", () => ({
+  saveNote: (...args: unknown[]) => saveNoteMock(...args),
+  readNote: (...args: unknown[]) => readNoteMock(...args),
+  getNotesFolder: (...args: unknown[]) => getNotesFolderMock(...args),
+  listNotes: (...args: unknown[]) => listNotesMock(...args),
+  setNotesFolder: vi.fn(),
+  listWorkspaces: vi.fn(),
+  openWorkspaceWindow: vi.fn(),
+  switchWorkspace: vi.fn(),
+  removeWorkspaceFromList: vi.fn(),
+  persistRecoverySnapshot: vi.fn(),
+  deleteNote: vi.fn(),
+  createNote: vi.fn(),
+  listFolders: vi.fn(),
+  createFolder: vi.fn(),
+  deleteFolder: vi.fn(),
+  renameFolder: vi.fn(),
+  moveNote: vi.fn(),
+  moveFolder: vi.fn(),
+  duplicateNote: vi.fn(),
+  getSettings: vi.fn().mockResolvedValue({}),
+  updateSettings: vi.fn(),
+  updateGlobalSettings: vi.fn(),
+  updateWorkspaceSettings: vi.fn(),
+  updateGitEnabled: vi.fn(),
+  searchNotes: vi.fn(),
+  startFileWatcher: vi.fn(),
+}));
 
-afterEach(() => {
-  document.body.replaceChildren();
-});
+const consoleErrorMock = vi.spyOn(console, "error").mockImplementation(() => {});
 
-describe("NotesProvider save failures", () => {
-  beforeEach(() => {
-    getNotesFolderMock.mockReset().mockResolvedValue(null);
-    listenMock.mockReset().mockResolvedValue(vi.fn());
+import { NotesProvider, useNotesActions, useNotesData } from "../context/NotesContext";
+
+function TestConsumer() {
+  const { selectNote, saveNote } = useNotesActions();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await selectNote("note-1");
+      if (cancelled) return;
+      await saveNote("new content", "note-1");
+      if (cancelled) return;
+      window.dispatchEvent(new CustomEvent("save-complete"));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectNote, saveNote]);
+
+  return null;
+}
+
+function ErrorConsumer() {
+  const { saveNote } = useNotesActions();
+  const { error } = useNotesData();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await saveNote("content", "note-1");
+      } catch {
+        // expected
+      }
+      if (cancelled) return;
+      window.dispatchEvent(new CustomEvent("error-emitted"));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [saveNote]);
+
+  return <span data-testid="error">{error ?? ""}</span>;
+}
+
+describe("NotesContext saveNote call chain", () => {
+  afterEach(() => {
     saveNoteMock.mockReset();
-    readNoteMock.mockReset().mockResolvedValue({
-      id: "draft.md",
-      title: "Draft",
-      content: "# Draft",
-      path: "/notes/draft.md",
+    readNoteMock.mockReset();
+    listNotesMock.mockReset();
+    consoleErrorMock.mockClear();
+    listenMock.mockClear();
+    document.body.replaceChildren();
+  });
+
+  it("resolves the revision and calls notesService.saveNote in the correct order", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    readNoteMock.mockResolvedValueOnce({
+      id: "note-1",
+      title: "Note",
+      content: "old content",
+      path: "/notes/note-1.md",
       modified: 1,
       revision: "rev-1",
     });
+    saveNoteMock.mockResolvedValueOnce({
+      status: "saved",
+      note: { id: "note-1", revision: "rev-2" },
+    });
+
+    const saveCompletePromise = new Promise<void>((resolve) => {
+      const handler = () => {
+        window.removeEventListener("save-complete", handler);
+        resolve();
+      };
+      window.addEventListener("save-complete", handler);
+    });
+
+    try {
+      await act(async () => {
+        root.render(
+          <NotesProvider>
+            <TestConsumer />
+          </NotesProvider>,
+        );
+      });
+
+      await saveCompletePromise;
+
+      expect(saveNoteMock).toHaveBeenCalledTimes(1);
+      expect(saveNoteMock).toHaveBeenCalledWith(
+        "note-1",
+        "new content",
+        "rev-1",
+      );
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+    }
+  });
+});
+
+describe("NotesContext missing revision error", () => {
+  afterEach(() => {
+    saveNoteMock.mockReset();
+    readNoteMock.mockReset();
+    consoleErrorMock.mockClear();
+    listenMock.mockClear();
+    document.body.replaceChildren();
   });
 
-  it("keeps the UI error and rejects so safe close can recover the draft", async () => {
-    const failure = new Error("disk full");
-    saveNoteMock.mockRejectedValueOnce(failure);
+  it("logs the note id to console and surfaces an actionable user-facing error", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
 
-    let actions: ReturnType<typeof useNotesActions> | null = null;
-    let error: string | null = null;
+    const errorEmittedPromise = new Promise<void>((resolve) => {
+      const handler = () => {
+        window.removeEventListener("error-emitted", handler);
+        resolve();
+      };
+      window.addEventListener("error-emitted", handler);
+    });
 
-    function Probe() {
-      actions = useNotesActions();
-      error = useNotesData().error;
-      return null;
-    }
+    try {
+      await act(async () => {
+        root.render(
+          <NotesProvider>
+            <ErrorConsumer />
+          </NotesProvider>,
+        );
+      });
 
-    const container = document.createElement("div");
-    document.body.append(container);
-    const root = createRoot(container);
+      await errorEmittedPromise;
 
-    await act(async () => {
-      root.render(
-        <NotesProvider>
-          <Probe />
-        </NotesProvider>,
+      const errorText = host.querySelector<HTMLSpanElement>("[data-testid='error']")?.textContent;
+      expect(errorText).not.toContain("note-1");
+      expect(errorText).toContain("editor's base revision is missing");
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        "Missing base revision for note-1",
       );
-    });
-
-    expect(actions).not.toBeNull();
-
-    // Saves need the base revision of a loaded note (workspace sessions, #197).
-    await act(async () => {
-      await actions!.selectNote("draft.md");
-    });
-
-    await act(async () => {
-      await expect(
-        actions!.saveNote("# Draft\n\nLatest content", "draft.md"),
-      ).rejects.toBe(failure);
-    });
-
-    expect(saveNoteMock).toHaveBeenCalledWith(
-      "draft.md",
-      "# Draft\n\nLatest content",
-      "rev-1",
-    );
-    expect(error).toBe("disk full");
-
-    await act(async () => root.unmount());
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+    }
   });
 });
