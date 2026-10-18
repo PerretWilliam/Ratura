@@ -30,6 +30,7 @@ import {
   check as checkForUpdate,
   type Update,
 } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import * as aiService from "./services/ai";
@@ -766,9 +767,11 @@ function UpdateToast({
     try {
       await update.downloadAndInstall();
       toast.dismiss(toastId);
-      toast.success("Update installed! Restart Ratura to apply.", {
+      toast.success("Update installed", {
+        description: "Restart Ratura to use the new version.",
         duration: Infinity,
         closeButton: true,
+        action: { label: "Restart now", onClick: () => void relaunch() },
       });
     } catch (err) {
       console.error("Update failed:", err);
