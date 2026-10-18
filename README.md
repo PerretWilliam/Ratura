@@ -1,12 +1,12 @@
-# Scratch
+# Ratura
 
-<img src="docs/app-icon.png" alt="Scratch" width="128" height="128" style="border-radius: 22px; margin-bottom: 8px;">
+<img src="docs/app-icon.png" alt="Ratura" width="128" height="128" style="border-radius: 22px; margin-bottom: 8px;">
 
 A minimalist, offline-first markdown note-taking app for macOS, Windows, and Linux.
 
 ![macOS](https://img.shields.io/badge/platform-macOS-lightgrey) ![Windows](https://img.shields.io/badge/platform-Windows-blue) ![Linux](https://img.shields.io/badge/platform-Linux-orange)
 
-[Website](https://www.ericli.io/scratch) · [Releases](https://github.com/erictli/scratch/releases)
+[Repository](https://github.com/PerretWilliam/Ratura) · [Origine du projet](#origine-du-projet)
 
 ## Features
 
@@ -35,46 +35,25 @@ A minimalist, offline-first markdown note-taking app for macOS, Windows, and Lin
 
 ## Installation
 
-### macOS
-
-**Homebrew (Recommended)**
-
-```bash
-brew tap erictli/tap
-brew install --cask erictli/tap/scratch
-```
-
-**Manual Download**
-
-1. Download the latest `.dmg` from [Releases](https://github.com/erictli/scratch/releases)
-2. Open the DMG and drag Scratch to Applications
-3. Open Scratch from Applications
-
-### Windows
-
-Download the latest `.exe` installer from [Releases](https://github.com/erictli/scratch/releases) and run it. WebView2 will be downloaded automatically if needed.
-
-### Linux
-
-Download the latest `.AppImage` or `.deb` from [Releases](https://github.com/erictli/scratch/releases).
-
-### From Source
+Ratura does not publish releases yet. Build it from source:
 
 **Prerequisites:** Node.js 18+, Rust 1.70+
 
 **macOS:** Xcode Command Line Tools · **Windows:** WebView2 Runtime (pre-installed on Windows 11)
 
 ```bash
-git clone https://github.com/erictli/scratch.git
-cd scratch
+git clone https://github.com/PerretWilliam/Ratura.git
+cd Ratura
 npm install
 npm run tauri dev      # Development
 npm run tauri build    # Production build
 ```
 
+Ratura uses its own bundle identifier and settings folder (`.ratura/`), so it can be installed next to Scratch. Opening a notes folder already used by Scratch copies its `.scratch/settings.json` once and leaves the original untouched.
+
 ## Keyboard Shortcuts
 
-Scratch is designed to be usable without a mouse. Here are the essentials to get started:
+Ratura is designed to be usable without a mouse. Here are the essentials to get started:
 
 | Shortcut          | Action                 |
 | ----------------- | ---------------------- |
@@ -106,12 +85,12 @@ Many more shortcuts and features are available in the app—explore via the comm
 
 ## Contributing
 
-Scratch is mostly stable and intentionally minimal, so I'm no longer monitoring issues and PRs regularly. You're welcome to open them, but I can't guarantee I'll get to everything, and it may take a while when I do.
+Ratura stays intentionally minimal. Small, focused PRs with passing tests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-What makes Scratch special is its minimal feature set and focus on user experience. We're not trying to build Obsidian or Notion, so not every feature will be a fit. If you want to make major changes or take Scratch in a new direction, you should fork it – it's MIT licensed.
+## Origine du projet
 
-**If you open a PR:** keep it small and focused, and try to address any CodeRabbit comments. I generally won't go back and forth with review comments – if I merge, I'll make any additional changes directly.
+Ratura is a fork of [Scratch](https://github.com/erictli/scratch) by [Eric Li](https://ericli.io), released under the MIT license. Scratch stopped merging contributions, so Ratura picks it up under a new name and integrates the open community pull requests. All credit for the original app and design goes to Eric Li and the Scratch contributors.
 
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE).
