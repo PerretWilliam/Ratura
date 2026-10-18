@@ -6,7 +6,7 @@ A minimalist, offline-first markdown note-taking app for macOS, Windows, and Lin
 
 ![macOS](https://img.shields.io/badge/platform-macOS-lightgrey) ![Windows](https://img.shields.io/badge/platform-Windows-blue) ![Linux](https://img.shields.io/badge/platform-Linux-orange)
 
-[Repository](https://github.com/PerretWilliam/Ratura) · [Origine du projet](#origine-du-projet)
+[Repository](https://github.com/PerretWilliam/Ratura) · [Project origin](#project-origin)
 
 ## Features
 
@@ -89,7 +89,7 @@ Many more shortcuts and features are available in the app—explore via the comm
 
 Ratura stays intentionally minimal. Small, focused PRs with passing tests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Origine du projet
+## Project origin
 
 Ratura is a fork of [Scratch](https://github.com/erictli/scratch) by [Eric Li](https://ericli.io), released under the MIT license. Scratch stopped merging contributions, so Ratura picks it up under a new name and integrates the open community pull requests. All credit for the original app and design goes to Eric Li and the Scratch contributors.
 
