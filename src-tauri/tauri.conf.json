@@ -55,7 +55,8 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-"
     },
     "windows": {
       "webviewInstallMode": {
@@ -65,7 +66,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE3RTQ2NTA4QzJGODdFRTYKUldUbWZ2akNDR1hrcDlud3VQSVhuYVU0cDk5V0RkaVFuVElRSGRVMjlFam9IdFVCNnU1ZlVJOXEK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI2MDU4MTNBQTgyMUIxQjUKUldTMXNTR29Pb0VGdG9rRktNdUhhQVYzbHNQandhZ1hiQTN5bzRQUTJPbytLMVFWc2xlZzBELzEK",
       "endpoints": [
         "https://github.com/PerretWilliam/Ratura/releases/latest/download/latest.json"
       ]
