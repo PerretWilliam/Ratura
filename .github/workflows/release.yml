@@ -1,7 +1,8 @@
 name: Release
 
 # Every push to main whose package.json version has no tag yet builds all
-# platforms and publishes "vX.Y.Z". Bump the version to cut a release.
+# platforms and publishes "vX.Y.Z" with that version's CHANGELOG.md section
+# as release notes. Add the changelog section and bump the version to release.
 on:
   push:
     branches: [main]
@@ -20,6 +21,7 @@ jobs:
     outputs:
       tag: ${{ steps.check.outputs.tag }}
       exists: ${{ steps.check.outputs.exists }}
+      notes: ${{ steps.check.outputs.notes }}
     steps:
       - uses: actions/checkout@v5
 
@@ -32,6 +34,18 @@ jobs:
             echo "$tag already released, nothing to do."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
+            notes="$(awk -v v="${tag#v}" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ || /^\[[0-9.]+\]: / {f=0} f' CHANGELOG.md)"
+            if [ -z "$(echo "$notes" | tr -d '[:space:]')" ]; then
+              echo "::error::CHANGELOG.md has no '## [${tag#v}]' section. Add one before releasing."
+              exit 1
+            fi
+            {
+              echo "notes<<CHANGELOG_EOF"
+              echo "$notes"
+              echo
+              echo "The macOS build is not notarized: right-click the app and choose Open the first time."
+              echo "CHANGELOG_EOF"
+            } >> "$GITHUB_OUTPUT"
           fi
 
   build:
@@ -91,7 +105,7 @@ jobs:
         with:
           tagName: ${{ needs.version.outputs.tag }}
           releaseName: "Ratura ${{ needs.version.outputs.tag }}"
-          releaseBody: "Download the app for your platform below. The macOS build is not notarized: right-click the app and choose Open the first time."
+          releaseBody: ${{ needs.version.outputs.notes }}
           releaseDraft: true
           prerelease: false
           updaterJsonPreferNsis: true
