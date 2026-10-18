@@ -34,22 +34,21 @@ pub fn sha256(input: &[u8]) -> [u8; 32] {
     ];
 
     let mut state = INITIAL;
-    let mut chunks = input.chunks_exact(64);
-    for chunk in &mut chunks {
+    let (blocks, remainder) = input.as_chunks::<64>();
+    for chunk in blocks {
         sha256_compress(&mut state, chunk, &ROUND_CONSTANTS);
     }
-    let remainder = chunks.remainder();
     let mut tail = [0_u8; 128];
     tail[..remainder.len()].copy_from_slice(remainder);
     tail[remainder.len()] = 0x80;
     let tail_length = if remainder.len() < 56 { 64 } else { 128 };
     tail[tail_length - 8..tail_length]
         .copy_from_slice(&(input.len() as u64).wrapping_mul(8).to_be_bytes());
-    for chunk in tail[..tail_length].chunks_exact(64) {
+    for chunk in tail[..tail_length].as_chunks::<64>().0 {
         sha256_compress(&mut state, chunk, &ROUND_CONSTANTS);
     }
     let mut digest = [0_u8; 32];
-    for (output, word) in digest.chunks_exact_mut(4).zip(state) {
+    for (output, word) in digest.as_chunks_mut::<4>().0.iter_mut().zip(state) {
         output.copy_from_slice(&word.to_be_bytes());
     }
     digest
@@ -57,8 +56,8 @@ pub fn sha256(input: &[u8]) -> [u8; 32] {
 
 fn sha256_compress(state: &mut [u32; 8], chunk: &[u8], constants: &[u32; 64]) {
     let mut schedule = [0_u32; 64];
-    for (index, word) in chunk.chunks_exact(4).enumerate() {
-        schedule[index] = u32::from_be_bytes([word[0], word[1], word[2], word[3]]);
+    for (index, word) in chunk.as_chunks::<4>().0.iter().enumerate() {
+        schedule[index] = u32::from_be_bytes(*word);
     }
     for index in 16..64 {
         let s0 = schedule[index - 15].rotate_right(7)

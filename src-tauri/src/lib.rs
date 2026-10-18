@@ -3302,7 +3302,7 @@ async fn duplicate_note(
 
     let duplicated_content = if original.content.starts_with("# ") {
         if let Some(rest) = original.content.strip_prefix("# ") {
-            let first_line_end = rest.find('\n').map_or(rest.len(), |i| i);
+            let first_line_end = rest.find('\n').unwrap_or(rest.len());
             let title = &rest[..first_line_end];
             format!("# {} (Copy){}", title, &rest[first_line_end..])
         } else {
@@ -6206,6 +6206,8 @@ fn take_pending_single_instance_opens() -> Vec<PendingOpenRequest> {
     std::mem::take(&mut *pending)
 }
 
+// RunEvent::Opened only exists on macOS.
+#[cfg(target_os = "macos")]
 fn defer_opened_markdown_paths_if_needed(
     app: &AppHandle,
     paths: Vec<PathBuf>,
