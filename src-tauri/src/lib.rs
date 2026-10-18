@@ -102,7 +102,7 @@ pub struct AppConfig {
     pub notes_folder: Option<String>,
 }
 
-// Per-folder settings (stored in .scratch/settings.json within notes folder)
+// Per-folder settings (stored in .ratura/settings.json within notes folder)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Settings {
     pub theme: ThemeSettings,
@@ -335,7 +335,7 @@ impl SearchIndex {
 // App state with improved structure
 pub struct AppState {
     pub app_config: RwLock<AppConfig>,  // notes_folder path (stored in app data)
-    pub settings: RwLock<Settings>,      // per-folder settings (stored in .scratch/)
+    pub settings: RwLock<Settings>,      // per-folder settings (stored in .ratura/)
     pub notes_cache: RwLock<HashMap<String, NoteMetadata>>,
     pub file_watcher: Mutex<Option<FileWatcherState>>,
     pub search_index: Mutex<Option<SearchIndex>>,
@@ -600,7 +600,7 @@ fn strip_markdown(text: &str) -> String {
 }
 
 /// Directories to exclude from note discovery and ID resolution (app-internal, always excluded).
-const EXCLUDED_DIRS: &[&str] = &[".git", ".scratch", ".obsidian", ".trash", "assets"];
+const EXCLUDED_DIRS: &[&str] = &[".git", ".ratura", ".scratch", ".obsidian", ".trash", "assets"];
 
 /// Default user-configurable directories to ignore (common build/dependency folders).
 const DEFAULT_IGNORED_DIRS: &[&str] = &[
@@ -718,11 +718,19 @@ fn get_app_config_path(app: &AppHandle) -> Result<PathBuf> {
     Ok(app_data.join("config.json"))
 }
 
-// Get per-folder settings file path (in .scratch/ within notes folder)
+// Get per-folder settings file path (in .ratura/ within notes folder).
+// Folders previously opened with Scratch get their .scratch/settings.json copied
+// over once, leaving the original in place so Scratch keeps working.
 fn get_settings_path(notes_folder: &str) -> PathBuf {
-    let scratch_dir = PathBuf::from(notes_folder).join(".scratch");
-    std::fs::create_dir_all(&scratch_dir).ok();
-    scratch_dir.join("settings.json")
+    let folder = PathBuf::from(notes_folder);
+    let ratura_dir = folder.join(".ratura");
+    std::fs::create_dir_all(&ratura_dir).ok();
+    let path = ratura_dir.join("settings.json");
+    let legacy = folder.join(".scratch").join("settings.json");
+    if !path.exists() && legacy.exists() {
+        std::fs::copy(&legacy, &path).ok();
+    }
+    path
 }
 
 // Get search index path
@@ -819,12 +827,12 @@ fn initialize_notes_folder(app: &AppHandle, path_buf: &PathBuf, state: &AppState
     let assets = path_buf.join("assets");
     std::fs::create_dir_all(&assets).map_err(|e| e.to_string())?;
 
-    // Create .scratch config folder
-    let scratch_dir = path_buf.join(".scratch");
-    std::fs::create_dir_all(&scratch_dir).map_err(|e| e.to_string())?;
+    // Create .ratura config folder
+    let ratura_dir = path_buf.join(".ratura");
+    std::fs::create_dir_all(&ratura_dir).map_err(|e| e.to_string())?;
 
     // Verify write access early to avoid later silent failures
-    let write_test_path = scratch_dir.join(".write-test");
+    let write_test_path = ratura_dir.join(".write-test");
     std::fs::write(&write_test_path, b"ok")
         .map_err(|e| format!("Notes folder is not writable: {}", e))?;
     let _ = std::fs::remove_file(&write_test_path);
@@ -1278,7 +1286,7 @@ async fn create_note(target_folder: Option<String>, state: State<'_, AppState>) 
 }
 
 /// Validate a relative folder path against traversal attacks
-const RESERVED_FOLDER_NAMES: &[&str] = &[".git", ".scratch", ".obsidian", ".trash", "assets"];
+const RESERVED_FOLDER_NAMES: &[&str] = &[".git", ".ratura", ".scratch", ".obsidian", ".trash", "assets"];
 
 fn validate_folder_path(path: &str) -> Result<(), String> {
     if path.contains('\\') {
@@ -2844,28 +2852,28 @@ fn check_cli_exists(command_name: &str, path: &str) -> Result<bool, String> {
     Ok(check_output.status.success())
 }
 
-/// Marker comment embedded in CLI wrapper scripts installed by Scratch.
+/// Marker comment embedded in CLI wrapper scripts installed by Ratura.
 /// Used to identify and validate our own wrapper before modifying or removing it.
 #[cfg(target_os = "macos")]
-const SCRATCH_CLI_MARKER: &str = "# SCRATCH_CLI_WRAPPER";
+const RATURA_CLI_MARKER: &str = "# RATURA_CLI_WRAPPER";
 
 /// Returns the path where the CLI script should be installed (macOS only).
 /// Checks PATH for Homebrew bin first, then falls back to architecture detection.
-/// Apple Silicon: /opt/homebrew/bin/scratch
-/// Intel: /usr/local/bin/scratch
+/// Apple Silicon: /opt/homebrew/bin/ratura
+/// Intel: /usr/local/bin/ratura
 #[cfg(target_os = "macos")]
 fn cli_target_path() -> PathBuf {
     // Check if the user's PATH contains /opt/homebrew/bin (Homebrew on Apple Silicon)
     if let Ok(path_var) = std::env::var("PATH") {
         if path_var.split(':').any(|p| p == "/opt/homebrew/bin") {
-            return PathBuf::from("/opt/homebrew/bin/scratch");
+            return PathBuf::from("/opt/homebrew/bin/ratura");
         }
     }
     // Fall back to architecture detection
     if std::env::consts::ARCH == "aarch64" {
-        return PathBuf::from("/opt/homebrew/bin/scratch");
+        return PathBuf::from("/opt/homebrew/bin/ratura");
     }
-    PathBuf::from("/usr/local/bin/scratch")
+    PathBuf::from("/usr/local/bin/ratura")
 }
 
 #[tauri::command]
@@ -2881,7 +2889,7 @@ fn get_cli_status() -> Result<CliStatus, String> {
         }
         // Verify this is our wrapper (has marker) and points to the current binary
         let content = std::fs::read_to_string(&target).unwrap_or_default();
-        if !content.contains(SCRATCH_CLI_MARKER) {
+        if !content.contains(RATURA_CLI_MARKER) {
             // Foreign binary at this path — don't claim it as ours
             return Ok(CliStatus { supported: true, installed: false, path: None });
         }
@@ -2919,9 +2927,9 @@ fn install_cli() -> Result<String, String> {
         if target.exists() || target.symlink_metadata().is_ok() {
             // Only remove if it's our wrapper (contains marker)
             let content = std::fs::read_to_string(&target).unwrap_or_default();
-            if !content.contains(SCRATCH_CLI_MARKER) {
+            if !content.contains(RATURA_CLI_MARKER) {
                 return Err(format!(
-                    "A different 'scratch' command already exists at {}. Remove it manually to install the Scratch CLI.",
+                    "A different 'ratura' command already exists at {}. Remove it manually to install the Ratura CLI.",
                     target.display()
                 ));
             }
@@ -2941,7 +2949,7 @@ fn install_cli() -> Result<String, String> {
         // the terminal is not blocked waiting for the GUI app to exit.
         let script = format!(
             "#!/bin/sh\n{}\nnohup {} \"$@\" >/dev/null 2>&1 &\n",
-            SCRATCH_CLI_MARKER,
+            RATURA_CLI_MARKER,
             escaped_exe
         );
         std::fs::write(&target, script.as_bytes())
@@ -2968,9 +2976,9 @@ fn uninstall_cli() -> Result<(), String> {
         let target = cli_target_path();
         if target.exists() || target.symlink_metadata().is_ok() {
             let content = std::fs::read_to_string(&target).unwrap_or_default();
-            if !content.contains(SCRATCH_CLI_MARKER) {
+            if !content.contains(RATURA_CLI_MARKER) {
                 return Err(format!(
-                    "File at {} was not installed by Scratch. Refusing to remove.",
+                    "File at {} was not installed by Ratura. Refusing to remove.",
                     target.display()
                 ));
             }
@@ -3583,7 +3591,7 @@ fn create_preview_window(app: &AppHandle, file_path: &str) -> Result<(), String>
     let url = format!("index.html?mode=preview&file={}", encoded_path);
 
     let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App(url.into()))
-        .title(format!("{} — Scratch", filename))
+        .title(format!("{} — Ratura", filename))
         .inner_size(800.0, 600.0)
         .min_inner_size(400.0, 300.0)
         .resizable(true)
