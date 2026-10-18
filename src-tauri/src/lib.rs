@@ -1639,11 +1639,7 @@ fn strip_markdown(text: &str) -> String {
     result = inline_math_re
         .replace_all(&result, |caps: &regex::Captures<'_>| {
             let latex = &caps[2];
-            if latex
-                .chars()
-                .next()
-                .is_some_and(|ch| ch.is_ascii_digit())
-            {
+            if latex.chars().next().is_some_and(|ch| ch.is_ascii_digit()) {
                 caps.get(0).map(|m| m.as_str()).unwrap_or("").to_string()
             } else {
                 format!("{}{}", &caps[1], latex)
@@ -1711,7 +1707,14 @@ fn strip_markdown(text: &str) -> String {
 }
 
 /// Directories to exclude from note discovery and ID resolution (app-internal, always excluded).
-const EXCLUDED_DIRS: &[&str] = &[".git", ".ratura", ".scratch", ".obsidian", ".trash", "assets"];
+const EXCLUDED_DIRS: &[&str] = &[
+    ".git",
+    ".ratura",
+    ".scratch",
+    ".obsidian",
+    ".trash",
+    "assets",
+];
 
 /// Default user-configurable directories to ignore (common build/dependency folders).
 const DEFAULT_IGNORED_DIRS: &[&str] = &[
@@ -3400,7 +3403,14 @@ async fn duplicate_note(
 }
 
 /// Validate a relative folder path against traversal attacks
-const RESERVED_FOLDER_NAMES: &[&str] = &[".git", ".ratura", ".scratch", ".obsidian", ".trash", "assets"];
+const RESERVED_FOLDER_NAMES: &[&str] = &[
+    ".git",
+    ".ratura",
+    ".scratch",
+    ".obsidian",
+    ".trash",
+    "assets",
+];
 
 fn validate_folder_path(path: &str) -> Result<(), String> {
     if path.contains('\\') {
@@ -4691,19 +4701,19 @@ fn setup_file_watcher(
                     };
 
                     if let Ok(rel) = path.strip_prefix(&notes_root) {
-                        let is_ignored = rel
-                            .parent()
-                            .unwrap_or(Path::new(""))
-                            .components()
-                            .any(|component| {
-                                if let std::path::Component::Normal(name) = component {
-                                    if let Some(name_str) = name.to_str() {
-                                        return EXCLUDED_DIRS.contains(&name_str)
-                                            || ignored_dirs.iter().any(|d| d == name_str);
+                        let is_ignored =
+                            rel.parent()
+                                .unwrap_or(Path::new(""))
+                                .components()
+                                .any(|component| {
+                                    if let std::path::Component::Normal(name) = component {
+                                        if let Some(name_str) = name.to_str() {
+                                            return EXCLUDED_DIRS.contains(&name_str)
+                                                || ignored_dirs.iter().any(|d| d == name_str);
+                                        }
                                     }
-                                }
-                                false
-                            });
+                                    false
+                                });
                         if is_ignored {
                             continue;
                         }
@@ -5517,8 +5527,7 @@ fn install_cli() -> Result<String, String> {
         // the terminal is not blocked waiting for the GUI app to exit.
         let script = format!(
             "#!/bin/sh\n{}\nnohup {} \"$@\" >/dev/null 2>&1 &\n",
-            RATURA_CLI_MARKER,
-            escaped_exe
+            RATURA_CLI_MARKER, escaped_exe
         );
         std::fs::write(&target, script.as_bytes())
             .map_err(|e| format!("Failed to write CLI script: {}", e))?;
@@ -6010,8 +6019,7 @@ async fn ai_execute_ollama(
                 success: false,
                 output: String::new(),
                 error: Some(
-                    "Ollama did not respond in time. The model may still be loading."
-                        .to_string(),
+                    "Ollama did not respond in time. The model may still be loading.".to_string(),
                 ),
             });
         }
@@ -6077,7 +6085,10 @@ async fn ai_execute_ollama(
 
     if let Some(thinking) = &body.thinking {
         if !thinking.is_empty() {
-            eprintln!("Ollama thinking output ({} chars, discarded)", thinking.len());
+            eprintln!(
+                "Ollama thinking output ({} chars, discarded)",
+                thinking.len()
+            );
         }
     }
 
@@ -7213,7 +7224,6 @@ mod standalone_tests {
     }
 
     #[cfg(unix)]
-
     #[test]
     fn standalone_symlink_cannot_relabel_a_non_markdown_target() {
         use std::os::unix::fs::symlink;
@@ -7231,7 +7241,6 @@ mod standalone_tests {
     }
 
     #[cfg(unix)]
-
     #[test]
     fn standalone_symlink_to_markdown_resolves_to_its_target() {
         use std::os::unix::fs::symlink;
