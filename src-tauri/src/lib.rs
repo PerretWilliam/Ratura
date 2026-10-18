@@ -17,6 +17,7 @@ use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 mod draft_checkpoint;
+mod editor_image_open;
 mod git;
 mod hashing;
 mod persistence;
@@ -4910,27 +4911,35 @@ async fn copy_image_to_assets(
     // Sanitize the filename
     let sanitized_name = sanitize_filename(original_name);
 
-    // Create assets folder path
-    let assets_dir = PathBuf::from(&folder).join("assets");
+    // Keep imported files inside the canonical workspace even if an attacker
+    // replaces the assets directory with a symlink.
+    let canonical_workspace = fs::canonicalize(&folder)
+        .await
+        .map_err(|_| "Workspace folder is unavailable".to_string())?;
+    let assets_dir = canonical_workspace.join("assets");
     fs::create_dir_all(&assets_dir)
         .await
         .map_err(|e| e.to_string())?;
 
-    // Generate unique filename
-    let mut target_name = format!("{}.{}", sanitized_name, extension);
-    let mut counter = 1;
-    let mut target_path = assets_dir.join(&target_name);
-
-    while target_path.exists() {
-        target_name = format!("{}-{}.{}", sanitized_name, counter, extension);
-        target_path = assets_dir.join(&target_name);
-        counter += 1;
-    }
-
-    // Copy the file
-    fs::copy(&source, &target_path)
-        .await
-        .map_err(|_| "Failed to copy image".to_string())?;
+    let copy_source = source.clone();
+    let copy_name = sanitized_name.clone();
+    let copy_extension = ext_lower.clone();
+    let copy_workspace = canonical_workspace.clone();
+    let target_path = tauri::async_runtime::spawn_blocking(move || {
+        let canonical_assets = editor_image_open::canonical_workspace_assets(&copy_workspace)?;
+        editor_image_open::copy_image_to_assets_create_only(
+            &copy_source,
+            &canonical_assets,
+            &copy_name,
+            &copy_extension,
+        )
+    })
+    .await
+    .map_err(|error| format!("Image copy task failed: {error}"))??;
+    let target_name = target_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| "Copied image filename is invalid".to_string())?;
 
     // Return both relative path and filename for frontend to construct the URL
     Ok(format!("assets/{}", target_name))
@@ -5021,6 +5030,23 @@ async fn open_in_file_manager(path: String) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[tauri::command]
+fn open_editor_image(
+    window: WebviewWindow,
+    source: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    if !editor_image_open::editor_window_can_open_local_images(window.label()) {
+        return Err("Local images can only be opened from an editor window".to_string());
+    }
+
+    let workspace = state.workspace_for_window(window.label())?;
+    let workspace_path = PathBuf::from(workspace.notes_folder()?);
+    let image_path = editor_image_open::validate_editor_image_source(&source, &workspace_path)?;
+
+    open::that(&image_path).map_err(|error| format!("Failed to open image: {error}"))
 }
 
 #[tauri::command]
@@ -6699,6 +6725,7 @@ pub fn run() {
             save_clipboard_image,
             open_folder_dialog,
             open_in_file_manager,
+            open_editor_image,
             open_url_safe,
             git_is_available,
             git_get_status,
