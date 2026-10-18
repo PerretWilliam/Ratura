@@ -5,7 +5,7 @@ import { useNotes } from "../../context/NotesContext";
 import {
   buildFolderTree,
   countNotesInFolder,
-  getVisibleItems,
+  getVisibleItemsForFolderSection,
   type TreeItem,
 } from "../../lib/folderTree";
 import { FolderNameDialog } from "./FolderNameDialog";
@@ -37,10 +37,16 @@ import {
 } from "../icons";
 import * as notesService from "../../services/notes";
 import { FileTypeIcon } from "./FileTypeIcon";
+import {
+  SidebarFolderSection,
+  loadFolderSectionCollapsed,
+  saveFolderSectionCollapsed,
+} from "../layout/SidebarFolderSection";
 import type {
   AttachmentMetadata,
   FolderNode,
   NoteMetadata,
+  NoteSortOrder,
   Settings,
 } from "../../types/note";
 
@@ -352,7 +358,7 @@ interface FolderItemProps {
   onMoveFolderToParent: (path: string, targetParent: string) => void;
 }
 
-const FolderItemComponent = memo(function FolderItem({
+export const FolderItemComponent = memo(function FolderItem({
   folder,
   depth,
   collapsedFolders,
@@ -571,6 +577,7 @@ const FolderItemComponent = memo(function FolderItem({
 });
 
 interface FolderTreeViewProps {
+  sortOrder: NoteSortOrder;
   pinnedIds: Set<string>;
   settings: Settings | null;
   multiSelectedNoteIds: Set<string>;
@@ -580,6 +587,7 @@ interface FolderTreeViewProps {
 }
 
 export function FolderTreeView({
+  sortOrder,
   pinnedIds,
   settings: _settings,
   multiSelectedNoteIds,
@@ -608,6 +616,9 @@ export function FolderTreeView({
 
   const [collapsedFolders, setCollapsedFolders] =
     useState<Set<string>>(loadCollapsedFolders);
+  const [foldersSectionCollapsed, setFoldersSectionCollapsed] = useState(
+    loadFolderSectionCollapsed,
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -634,9 +645,14 @@ export function FolderTreeView({
     saveCollapsedFolders(collapsedFolders);
   }, [collapsedFolders]);
 
+  useEffect(() => {
+    saveFolderSectionCollapsed(foldersSectionCollapsed);
+  }, [foldersSectionCollapsed]);
+
   const tree = useMemo(
-    () => buildFolderTree(notes, attachments, pinnedIds, knownFolders),
-    [notes, attachments, pinnedIds, knownFolders],
+    () =>
+      buildFolderTree(notes, attachments, pinnedIds, knownFolders, sortOrder),
+    [notes, attachments, pinnedIds, knownFolders, sortOrder],
   );
 
   const handleToggleCollapse = useCallback((path: string) => {
@@ -654,6 +670,7 @@ export function FolderTreeView({
   // Expand a folder and all its ancestors
   const expandFolder = useCallback((folderPath: string) => {
     if (!folderPath) return;
+    setFoldersSectionCollapsed(false);
     setCollapsedFolders((prev) => {
       const next = new Set(prev);
       // Expand this folder and every ancestor
@@ -763,8 +780,14 @@ export function FolderTreeView({
 
   // Flat list of visible items for keyboard navigation
   const visibleItems = useMemo(
-    () => getVisibleItems(tree, pinnedIds, collapsedFolders),
-    [tree, pinnedIds, collapsedFolders],
+    () =>
+      getVisibleItemsForFolderSection(
+        tree,
+        pinnedIds,
+        collapsedFolders,
+        foldersSectionCollapsed,
+      ),
+    [tree, pinnedIds, collapsedFolders, foldersSectionCollapsed],
   );
 
   // Visible note IDs in order (for Shift+Click range computation)
@@ -889,12 +912,13 @@ export function FolderTreeView({
       }
 
       if (visibleItems.length === 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-
       const currentIndex = visibleItems.findIndex(
         (item) => itemKey(item) === focusedItemKey,
       );
+      if (e.key === "Enter" && currentIndex < 0) return;
+
+      e.preventDefault();
+      e.stopPropagation();
 
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         let newIndex: number;
@@ -914,7 +938,6 @@ export function FolderTreeView({
           if (attachment) selectAttachment(attachment);
         }
       } else if (e.key === "Enter") {
-        if (currentIndex < 0) return;
         const item = visibleItems[currentIndex];
         if (item.type === "folder") {
           handleToggleCollapse(item.path);
@@ -996,32 +1019,39 @@ export function FolderTreeView({
         ))}
 
         {/* Folders */}
-        {tree.folders.map((folder) => (
-          <FolderItemComponent
-            key={folder.path}
-            folder={folder}
-            depth={0}
-            collapsedFolders={collapsedFolders}
-            onToggleCollapse={handleToggleCollapse}
-            selectedNoteId={selectedNoteId}
-            selectedAttachmentId={selectedAttachment?.id ?? null}
-            focusedItemKey={focusedItemKey}
-            pinnedIds={pinnedIds}
-            multiSelectedNoteIds={multiSelectedNoteIds}
-            onNoteClick={handleNoteClick}
-            onAttachmentClick={handleAttachmentClick}
-            onCreateNoteHere={createNoteInFolder}
-            onNewSubfolder={handleNewSubfolder}
-            onRenameFolder={handleRenameFolder}
-            onDeleteFolder={handleDeleteFolder}
-            onPinNote={pinNote}
-            onUnpinNote={unpinNote}
-            onDuplicateNote={duplicateNote}
-            onDeleteNote={openDeleteNoteDialog}
-            onMoveNoteToParent={moveNote}
-            onMoveFolderToParent={moveFolder}
-          />
-        ))}
+        {tree.folders.length > 0 && (
+          <SidebarFolderSection
+            collapsed={foldersSectionCollapsed}
+            onCollapsedChange={setFoldersSectionCollapsed}
+          >
+            {tree.folders.map((folder) => (
+              <FolderItemComponent
+                key={folder.path}
+                folder={folder}
+                depth={0}
+                collapsedFolders={collapsedFolders}
+                onToggleCollapse={handleToggleCollapse}
+                selectedNoteId={selectedNoteId}
+                selectedAttachmentId={selectedAttachment?.id ?? null}
+                focusedItemKey={focusedItemKey}
+                pinnedIds={pinnedIds}
+                multiSelectedNoteIds={multiSelectedNoteIds}
+                onNoteClick={handleNoteClick}
+                onAttachmentClick={handleAttachmentClick}
+                onCreateNoteHere={createNoteInFolder}
+                onNewSubfolder={handleNewSubfolder}
+                onRenameFolder={handleRenameFolder}
+                onDeleteFolder={handleDeleteFolder}
+                onPinNote={pinNote}
+                onUnpinNote={unpinNote}
+                onDuplicateNote={duplicateNote}
+                onDeleteNote={openDeleteNoteDialog}
+                onMoveNoteToParent={moveNote}
+                onMoveFolderToParent={moveFolder}
+              />
+            ))}
+          </SidebarFolderSection>
+        )}
 
         {/* Unpinned root notes */}
         {unpinnedRootNotes.map((note) => (
