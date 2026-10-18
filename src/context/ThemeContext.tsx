@@ -107,6 +107,10 @@ interface ThemeContextType {
   reloadSettings: () => Promise<void>;
   textDirection: TextDirection;
   setTextDirection: (dir: TextDirection) => void;
+  spellCheckEnabled: boolean;
+  setSpellCheckEnabled: (enabled: boolean) => void;
+  autoCorrectEnabled: boolean;
+  setAutoCorrectEnabled: (enabled: boolean) => void;
   editorWidth: EditorWidth;
   setEditorWidth: (width: EditorWidth) => void;
   interfaceZoom: number;
@@ -189,6 +193,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     Required<EditorFontSettings>
   >(defaultEditorFontSettings);
   const [textDirection, setTextDirectionState] = useState<TextDirection>("auto");
+  const [spellCheckEnabled, setSpellCheckEnabledState] = useState(false);
+  const [autoCorrectEnabled, setAutoCorrectEnabledState] = useState(false);
   const [editorWidth, setEditorWidthState] = useState<EditorWidth>("normal");
   const [interfaceZoom, setInterfaceZoomState] = useState(1.0);
   const [customEditorWidthPx, setCustomEditorWidthPxState] = useState<number>(
@@ -229,6 +235,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       if (isTextDirection(settings.textDirection)) {
         setTextDirectionState(settings.textDirection);
       }
+      const isSpellCheckEnabled = settings.spellCheckEnabled === true;
+      setSpellCheckEnabledState(isSpellCheckEnabled);
+      setAutoCorrectEnabledState(
+        isSpellCheckEnabled && settings.autoCorrectEnabled === true,
+      );
       if (
         settings.editorWidth === "narrow" ||
         settings.editorWidth === "normal" ||
@@ -442,6 +453,40 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, []);
 
+  const setSpellCheckEnabled = useCallback(async (enabled: boolean) => {
+    setSpellCheckEnabledState(enabled);
+    if (!enabled) {
+      setAutoCorrectEnabledState(false);
+    }
+    try {
+      const settings = await getSettings();
+      await updateSettings({
+        ...settings,
+        spellCheckEnabled: enabled,
+        autoCorrectEnabled: enabled && autoCorrectEnabled,
+      });
+    } catch (error) {
+      console.error("Failed to save spell check setting:", error);
+    }
+  }, [autoCorrectEnabled]);
+
+  const setAutoCorrectEnabled = useCallback(async (enabled: boolean) => {
+    setAutoCorrectEnabledState(enabled);
+    if (enabled) {
+      setSpellCheckEnabledState(true);
+    }
+    try {
+      const settings = await getSettings();
+      await updateSettings({
+        ...settings,
+        spellCheckEnabled: enabled || spellCheckEnabled,
+        autoCorrectEnabled: enabled,
+      });
+    } catch (error) {
+      console.error("Failed to save auto correct setting:", error);
+    }
+  }, [spellCheckEnabled]);
+
   // Save and set editor width
   const setEditorWidth = useCallback(async (width: EditorWidth) => {
     setEditorWidthState(width);
@@ -641,6 +686,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         reloadSettings,
         textDirection,
         setTextDirection,
+        spellCheckEnabled,
+        setSpellCheckEnabled,
+        autoCorrectEnabled,
+        setAutoCorrectEnabled,
         editorWidth,
         setEditorWidth,
         interfaceZoom,
