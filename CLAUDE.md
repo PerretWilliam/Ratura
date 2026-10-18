@@ -40,4 +40,4 @@ Runs on pushes to `main` and `integration` and on every PR (Ubuntu runner): fron
 
 1. Bump version in `package.json` and `src-tauri/tauri.conf.json`
 2. Merge to `main`: the release workflow sees a version without a tag, builds all platforms, and publishes `vX.Y.Z` with `latest.json` for the updater
-3. The updater key lives in `~/.tauri/ratura.key`; the private key is the `TAURI_SIGNING_PRIVATE_KEY` repo secret
+3. The updater key lives in `~/.tauri/ratura.key` (password in `ratura.key.password`); both are the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` repo secrets
