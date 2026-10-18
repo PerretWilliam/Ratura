@@ -33,6 +33,7 @@ export type FontFamily = "system-sans" | "serif" | "monospace";
 export type TextDirection = "auto" | "ltr" | "rtl";
 export type EditorWidth = "narrow" | "normal" | "wide" | "full" | "custom";
 export type PasteMode = "markdown" | "plain" | "code-block";
+export type NoteSortOrder = "newest" | "oldest";
 
 export interface EditorFontSettings {
   baseFontFamily?: FontFamily;
@@ -62,6 +63,7 @@ export interface Settings {
   editorFont?: EditorFontSettings;
   gitEnabled?: boolean;
   foldersEnabled?: boolean;
+  sidebarSortOrder?: NoteSortOrder;
   pinnedNoteIds?: string[];
   textDirection?: TextDirection;
   spellCheckEnabled?: boolean;

@@ -22,8 +22,13 @@ import {
   TrashIcon,
   ExternalLinkIcon,
 } from "../icons";
-import type { AttachmentMetadata, Settings } from "../../types/note";
+import type {
+  AttachmentMetadata,
+  NoteSortOrder,
+  Settings,
+} from "../../types/note";
 import { FileTypeIcon } from "./FileTypeIcon";
+import { orderNoteListItems } from "../../lib/folderTree";
 
 const menuItemClass =
   "px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2 rounded-sm";
@@ -303,6 +308,7 @@ const AttachmentItem = memo(function AttachmentItem({
 });
 
 interface NoteListProps {
+  sortOrder: NoteSortOrder;
   multiSelectedNoteIds: Set<string>;
   setMultiSelectedNoteIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   lastClickedNoteId: string | null;
@@ -310,6 +316,7 @@ interface NoteListProps {
 }
 
 export function NoteList({
+  sortOrder,
   multiSelectedNoteIds,
   setMultiSelectedNoteIds,
   lastClickedNoteId,
@@ -395,6 +402,13 @@ export function NoteList({
     );
   }, [attachments, searchQuery]);
 
+  const isSearching = searchQuery.trim().length > 0;
+
+  const sortedDisplayItems = useMemo(
+    () => orderNoteListItems(displayItems, sortOrder, pinnedIds, isSearching),
+    [displayItems, sortOrder, pinnedIds, isSearching],
+  );
+
   // Listen for focus request from editor (when Escape is pressed)
   useEffect(() => {
     const handleFocusNoteList = () => {
@@ -419,8 +433,6 @@ export function NoteList({
   }, [openDeleteDialogForNote]);
 
   const foldersEnabled = settings?.foldersEnabled === true;
-  const isSearching = searchQuery.trim().length > 0;
-
   if (isLoading && notes.length === 0) {
     return (
       <div className="p-4 text-center text-text-muted select-none">
@@ -429,7 +441,7 @@ export function NoteList({
     );
   }
 
-  if (isSearching && displayItems.length === 0 && displayAttachments.length === 0) {
+  if (isSearching && sortedDisplayItems.length === 0 && displayAttachments.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-text-muted select-none">
         No results found
@@ -437,7 +449,7 @@ export function NoteList({
     );
   }
 
-  if (displayItems.length === 0 && displayAttachments.length === 0) {
+  if (sortedDisplayItems.length === 0 && displayAttachments.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-text-muted select-none">
         No notes yet
@@ -450,6 +462,7 @@ export function NoteList({
     return (
       <>
         <FolderTreeView
+          sortOrder={sortOrder}
           pinnedIds={pinnedIds}
           settings={settings}
           multiSelectedNoteIds={multiSelectedNoteIds}
@@ -491,7 +504,7 @@ export function NoteList({
         data-note-list
         className="group/notelist flex flex-col gap-1 p-1.5 outline-none"
       >
-        {displayItems.map((item) => (
+        {sortedDisplayItems.map((item) => (
           <NoteItemWithMenu
             key={item.id}
             id={item.id}

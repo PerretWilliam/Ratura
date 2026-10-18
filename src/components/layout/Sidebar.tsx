@@ -27,6 +27,8 @@ import { mod, shift, isMac, isWindows } from "../../lib/platform";
 import * as notesService from "../../services/notes";
 import { FolderNameDialog } from "../notes/FolderNameDialog";
 import { CommitPanel } from "../git/CommitPanel";
+import { NoteSortMenu } from "./SidebarControls";
+import type { NoteSortOrder } from "../../types/note";
 
 interface SidebarProps {
   onOpenSettings?: () => void;
@@ -51,6 +53,8 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [folderDialogParent, setFolderDialogParent] = useState("");
   const [foldersEnabled, setFoldersEnabled] = useState(true);
+  const [noteSortOrder, setNoteSortOrder] =
+    useState<NoteSortOrder>("newest");
   const [dragLabel, setDragLabel] = useState<string | null>(null);
   const [dragCount, setDragCount] = useState(1);
   const [multiSelectedNoteIds, setMultiSelectedNoteIds] = useState<Set<string>>(new Set());
@@ -172,11 +176,34 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
   useEffect(() => {
     notesService.getSettings().then((s) => {
       setFoldersEnabled(s.foldersEnabled === true);
+      setNoteSortOrder(
+        s.sidebarSortOrder === "oldest" ? "oldest" : "newest",
+      );
     }).catch((error) => {
       console.error("Failed to load settings:", error);
       setFoldersEnabled(false);
     });
   }, []);
+
+  const handleNoteSortOrderChange = useCallback(
+    (nextSortOrder: NoteSortOrder) => {
+      if (nextSortOrder === noteSortOrder) return;
+
+      const previousSortOrder = noteSortOrder;
+      setNoteSortOrder(nextSortOrder);
+
+      void notesService
+        .updateSidebarSortOrder(nextSortOrder)
+        .catch((error) => {
+          console.error("Failed to save note sort order:", error);
+          setNoteSortOrder((current) =>
+            current === nextSortOrder ? previousSortOrder : current,
+          );
+          toast.error("Failed to save note sort order");
+        });
+    },
+    [noteSortOrder],
+  );
 
   // Sync input with search query
   useEffect(() => {
@@ -350,6 +377,10 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
           </div>
         </div>
         <div className="flex items-center gap-px">
+          <NoteSortMenu
+            sortOrder={noteSortOrder}
+            onChange={handleNoteSortOrderChange}
+          />
           <IconButton
             onClick={toggleSearch}
             title={`Search Notes (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}F)`}
@@ -442,6 +473,7 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
 
         {/* Note list */}
         <NoteList
+          sortOrder={noteSortOrder}
           multiSelectedNoteIds={multiSelectedNoteIds}
           setMultiSelectedNoteIds={setMultiSelectedNoteIds}
           lastClickedNoteId={lastClickedNoteId}
