@@ -17,6 +17,7 @@ import {
   isGitSettingsEventForFolder,
   type GitSettingsChangedEvent,
 } from "../lib/settingsEvents";
+import { SETTINGS_CHANGED_DOM_EVENT } from "../lib/settingsScope";
 
 interface GitContextValue {
   // State
@@ -62,6 +63,7 @@ export function GitProvider({ children }: { children: ReactNode }) {
   const [gitEnabled, setGitEnabledState] = useState(false);
   const [isUpdatingGitEnabled, setIsUpdatingGitEnabled] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [settingsRevision, setSettingsRevision] = useState(0);
 
   // Use refs to avoid dependency cycles
   const hasLoadedRef = useRef(false);
@@ -368,6 +370,17 @@ export function GitProvider({ children }: { children: ReactNode }) {
     gitService.isGitAvailable().then(setGitAvailable);
   }, []);
 
+  useEffect(() => {
+    const handleSettingsChanged = () =>
+      setSettingsRevision((revision) => revision + 1);
+    window.addEventListener(SETTINGS_CHANGED_DOM_EVENT, handleSettingsChanged);
+    return () =>
+      window.removeEventListener(
+        SETTINGS_CHANGED_DOM_EVENT,
+        handleSettingsChanged,
+      );
+  }, []);
+
   // Load per-folder git visibility setting
   // If explicitly set in settings, use that. Otherwise auto-detect: enable if the folder is a git repo.
   useEffect(() => {
@@ -404,7 +417,7 @@ export function GitProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [notesFolder]);
+  }, [notesFolder, settingsRevision]);
 
   // Clear git-specific UI state when disabled
   useEffect(() => {

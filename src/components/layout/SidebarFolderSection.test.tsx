@@ -20,11 +20,11 @@ describe("folder section persistence", () => {
     };
 
     expect(loadFolderSectionCollapsed(storage)).toBe(false);
-    values.set("scratch:foldersSectionCollapsed", "true");
+    values.set("ratura:foldersSectionCollapsed", "true");
     expect(loadFolderSectionCollapsed(storage)).toBe(true);
 
     saveFolderSectionCollapsed(false, storage);
-    expect(values.get("scratch:foldersSectionCollapsed")).toBe("false");
+    expect(values.get("ratura:foldersSectionCollapsed")).toBe("false");
   });
 });
 

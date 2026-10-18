@@ -1,13 +1,12 @@
+use crate::hashing::sha256_hex;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, SystemTime};
 
 pub const CHECKPOINT_DIRECTORY_NAME: &str = "draft-checkpoints";
-const CHECKPOINT_RETENTION: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 
 static NEXT_TEMPORARY_FILE: AtomicU64 = AtomicU64::new(0);
 
@@ -95,16 +94,7 @@ pub fn read_checkpoint(
     app_data_directory: impl AsRef<Path>,
     key: &DraftCheckpointKey,
 ) -> Result<Option<DraftCheckpoint>, DraftCheckpointError> {
-    read_checkpoint_at(app_data_directory.as_ref(), key, SystemTime::now())
-}
-
-fn read_checkpoint_at(
-    app_data_directory: &Path,
-    key: &DraftCheckpointKey,
-    now: SystemTime,
-) -> Result<Option<DraftCheckpoint>, DraftCheckpointError> {
-    prune_expired_checkpoints_at(app_data_directory, now);
-    let checkpoint_directory = checkpoint_directory(app_data_directory);
+    let checkpoint_directory = checkpoint_directory(app_data_directory.as_ref());
     let path = checkpoint_path(&checkpoint_directory, key);
     let bytes = match fs::read(&path) {
         Ok(bytes) => bytes,
@@ -120,9 +110,7 @@ fn read_checkpoint_at(
 pub fn list_checkpoints(
     app_data_directory: impl AsRef<Path>,
 ) -> Result<Vec<DraftCheckpoint>, DraftCheckpointError> {
-    let app_data_directory = app_data_directory.as_ref();
-    prune_expired_checkpoints_at(app_data_directory, SystemTime::now());
-    let checkpoint_directory = checkpoint_directory(app_data_directory);
+    let checkpoint_directory = checkpoint_directory(app_data_directory.as_ref());
     let entries = match fs::read_dir(&checkpoint_directory) {
         Ok(entries) => entries,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -163,45 +151,6 @@ pub fn list_checkpoints(
     Ok(checkpoints)
 }
 
-fn prune_expired_checkpoints_at(app_data_directory: &Path, now: SystemTime) {
-    if let Some(cutoff) = now.checked_sub(CHECKPOINT_RETENTION) {
-        let _ = prune_checkpoints_older_than(app_data_directory, cutoff);
-    }
-}
-
-pub fn prune_checkpoints_older_than(
-    app_data_directory: impl AsRef<Path>,
-    cutoff: SystemTime,
-) -> Result<usize, DraftCheckpointError> {
-    let checkpoint_directory = checkpoint_directory(app_data_directory.as_ref());
-    let entries = match fs::read_dir(&checkpoint_directory) {
-        Ok(entries) => entries,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(0),
-        Err(error) => return Err(error.into()),
-    };
-    let mut removed = 0;
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|extension| extension.to_str()) != Some("json") {
-            continue;
-        }
-        let is_expired = entry
-            .metadata()
-            .and_then(|metadata| metadata.modified())
-            .map(|modified| modified < cutoff)
-            .unwrap_or(false);
-        if is_expired && fs::remove_file(path).is_ok() {
-            removed += 1;
-        }
-    }
-
-    if removed > 0 {
-        sync_parent_directory(&checkpoint_directory)?;
-    }
-    Ok(removed)
-}
-
 /// Idempotently removes only the selected checkpoint.
 pub fn clear_checkpoint(
     app_data_directory: impl AsRef<Path>,
@@ -233,7 +182,7 @@ fn checkpoint_file_name(key: &DraftCheckpointKey) -> String {
     identity.extend_from_slice(key.window_label.as_bytes());
     identity.extend_from_slice(&(key.note_id.len() as u64).to_be_bytes());
     identity.extend_from_slice(key.note_id.as_bytes());
-    format!("{}.json", crate::sha256::hex_digest(&identity))
+    format!("{}.json", sha256_hex(&identity))
 }
 
 fn ensure_identity_matches(
@@ -377,125 +326,139 @@ fn sync_parent_directory(_parent: &Path) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        checkpoint_directory, checkpoint_path, list_checkpoints, prune_checkpoints_older_than,
-        read_checkpoint, read_checkpoint_at, write_checkpoint, DraftCheckpoint, DraftCheckpointKey,
-        DraftCheckpointMetadata, CHECKPOINT_RETENTION,
-    };
+    use super::*;
     use std::fs;
     use std::path::PathBuf;
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use std::sync::atomic::{AtomicU64, Ordering};
 
-    struct TestDirectory(PathBuf);
+    static NEXT_TEST_DIRECTORY: AtomicU64 = AtomicU64::new(0);
 
-    // Clock nanos alone collide between parallel tests on coarse clocks (macOS).
-    static NEXT_TEST_DIRECTORY: std::sync::atomic::AtomicU64 =
-        std::sync::atomic::AtomicU64::new(0);
+    struct TestDirectory {
+        path: PathBuf,
+    }
 
     impl TestDirectory {
-        fn new() -> Self {
-            let nonce = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("system clock should be after Unix epoch")
-                .as_nanos();
-            let sequence =
-                NEXT_TEST_DIRECTORY.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        fn new(test_name: &str) -> Self {
+            let sequence = NEXT_TEST_DIRECTORY.fetch_add(1, Ordering::Relaxed);
             let path = std::env::temp_dir().join(format!(
-                "scratch-checkpoint-retention-{}-{nonce}-{sequence}",
-                std::process::id(),
+                "scratch-draft-checkpoint-{test_name}-{}-{sequence}",
+                std::process::id()
             ));
-            fs::create_dir_all(&path).expect("create checkpoint test directory");
-            Self(path)
+            fs::create_dir_all(&path).expect("create test directory");
+            Self { path }
+        }
+
+        fn app_data_dir(&self) -> PathBuf {
+            self.path.clone()
         }
     }
 
     impl Drop for TestDirectory {
         fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
+            let _ = fs::remove_dir_all(&self.path);
         }
     }
 
-    fn checkpoint() -> DraftCheckpoint {
-        DraftCheckpoint {
+    fn write_valid_checkpoint(dir: &PathBuf, window_label: &str, note_id: &str, content: &str) {
+        let checkpoint = DraftCheckpoint {
             key: DraftCheckpointKey {
-                window_label: "preview-note".to_string(),
-                note_id: "/note.md".to_string(),
+                window_label: window_label.to_string(),
+                note_id: note_id.to_string(),
             },
-            markdown: "# Draft".to_string(),
+            markdown: content.to_string(),
             metadata: DraftCheckpointMetadata {
-                source_path: "/note.md".to_string(),
-                base_revision: Some("revision".to_string()),
-                updated_at: "2026-08-04T12:00:00.000Z".to_string(),
+                source_path: format!("/notes/{note_id}.md"),
+                base_revision: Some("abc123".to_string()),
+                updated_at: "2024-01-01T00:00:00Z".to_string(),
             },
-        }
+        };
+        write_checkpoint(dir, &checkpoint).expect("write checkpoint");
     }
 
     #[test]
-    fn retention_prunes_expired_checkpoints_and_keeps_recent_ones() {
-        let directory = TestDirectory::new();
-        let checkpoint = checkpoint();
-        write_checkpoint(&directory.0, &checkpoint).expect("write checkpoint");
+    fn list_checkpoints_returns_valid_checkpoint() {
+        let directory = TestDirectory::new("list-valid");
+        let app_data = directory.app_data_dir();
+        write_valid_checkpoint(&app_data, "main", "note1", "valid content");
 
-        let old_cutoff = UNIX_EPOCH + Duration::from_secs(1);
-        assert_eq!(
-            prune_checkpoints_older_than(&directory.0, old_cutoff).unwrap(),
-            0,
-        );
-        assert!(read_checkpoint(&directory.0, &checkpoint.key)
-            .unwrap()
-            .is_some());
-
-        let future_cutoff = SystemTime::now() + Duration::from_secs(1);
-        assert_eq!(
-            prune_checkpoints_older_than(&directory.0, future_cutoff).unwrap(),
-            1,
-        );
-        assert!(read_checkpoint(&directory.0, &checkpoint.key)
-            .unwrap()
-            .is_none());
+        let checkpoints = list_checkpoints(&app_data).expect("list checkpoints");
+        assert_eq!(checkpoints.len(), 1);
+        assert_eq!(checkpoints[0].key.window_label, "main");
+        assert_eq!(checkpoints[0].key.note_id, "note1");
+        assert_eq!(checkpoints[0].markdown, "valid content");
     }
 
     #[test]
-    fn reading_a_checkpoint_runs_the_retention_sweep() {
-        let directory = TestDirectory::new();
-        let checkpoint = checkpoint();
-        write_checkpoint(&directory.0, &checkpoint).expect("write checkpoint");
+    fn list_checkpoints_skips_truncated_json() {
+        let directory = TestDirectory::new("list-truncated");
+        let app_data = directory.app_data_dir();
+        write_valid_checkpoint(&app_data, "main", "note1", "valid content");
 
-        let after_retention = SystemTime::now() + CHECKPOINT_RETENTION + Duration::from_secs(1);
-
-        assert!(
-            read_checkpoint_at(&directory.0, &checkpoint.key, after_retention)
-                .unwrap()
-                .is_none()
-        );
-        assert!(list_checkpoints(&directory.0).unwrap().is_empty());
-    }
-
-    #[test]
-    fn listing_skips_identity_mismatches_after_valid_deserialization() {
-        let directory = TestDirectory::new();
-        let original = checkpoint();
-        write_checkpoint(&directory.0, &original).expect("write checkpoint");
-        let path = checkpoint_path(&checkpoint_directory(&directory.0), &original.key);
-        let mut mismatched = original;
-        mismatched.key.note_id = "/different.md".to_string();
-        fs::write(&path, serde_json::to_vec(&mismatched).unwrap())
-            .expect("write mismatched checkpoint");
-
-        assert!(list_checkpoints(&directory.0).unwrap().is_empty());
-    }
-
-    #[test]
-    fn corrupt_checkpoint_does_not_hide_a_valid_checkpoint() {
-        let directory = TestDirectory::new();
-        let valid = checkpoint();
-        write_checkpoint(&directory.0, &valid).expect("write valid checkpoint");
+        // Write a truncated JSON file directly
+        let checkpoint_dir = app_data.join(CHECKPOINT_DIRECTORY_NAME);
+        let truncated_path = checkpoint_dir.join("truncated.json");
         fs::write(
-            checkpoint_directory(&directory.0).join("corrupt.json"),
-            b"not-json",
+            &truncated_path,
+            r#"{"key":{"window_label":"main","note_id":"note2"#,
         )
-        .expect("write corrupt checkpoint");
+        .unwrap();
 
-        assert_eq!(list_checkpoints(&directory.0).unwrap(), vec![valid]);
+        let checkpoints = list_checkpoints(&app_data).expect("list checkpoints");
+        // Only the valid checkpoint should be returned
+        assert_eq!(checkpoints.len(), 1);
+        assert_eq!(checkpoints[0].key.note_id, "note1");
+    }
+
+    #[test]
+    fn list_checkpoints_skips_identity_mismatch() {
+        let directory = TestDirectory::new("list-identity-mismatch");
+        let app_data = directory.app_data_dir();
+        write_valid_checkpoint(&app_data, "main", "note1", "valid content");
+
+        // Write a checkpoint with mismatched identity (wrong hash in filename)
+        let checkpoint_dir = app_data.join(CHECKPOINT_DIRECTORY_NAME);
+        let mismatch_path = checkpoint_dir.join("mismatch.json");
+        let mismatch_content = r#"{"key":{"window_label":"main","note_id":"note2"},"markdown":"mismatch","metadata":{"source_path":"/notes/note2.md","base_revision":"abc","updated_at":"2024-01-01T00:00:00Z"}}"#;
+        fs::write(&mismatch_path, mismatch_content).unwrap();
+
+        let checkpoints = list_checkpoints(&app_data).expect("list checkpoints");
+        // Only the valid checkpoint should be returned
+        assert_eq!(checkpoints.len(), 1);
+        assert_eq!(checkpoints[0].key.note_id, "note1");
+    }
+
+    #[test]
+    fn list_checkpoints_skips_unreadable_entry() {
+        let directory = TestDirectory::new("list-unreadable");
+        let app_data = directory.app_data_dir();
+        write_valid_checkpoint(&app_data, "main", "note1", "valid content");
+
+        // Create a directory entry instead of a file (unreadable as JSON)
+        let checkpoint_dir = app_data.join(CHECKPOINT_DIRECTORY_NAME);
+        fs::create_dir(checkpoint_dir.join("not-a-file.json")).unwrap();
+
+        let checkpoints = list_checkpoints(&app_data).expect("list checkpoints");
+        assert_eq!(checkpoints.len(), 1);
+        assert_eq!(checkpoints[0].key.note_id, "note1");
+    }
+
+    #[test]
+    fn list_checkpoints_preserves_deterministic_sorting() {
+        let directory = TestDirectory::new("list-sorting");
+        let app_data = directory.app_data_dir();
+        write_valid_checkpoint(&app_data, "main", "note1", "content1");
+        write_valid_checkpoint(&app_data, "main", "note2", "content2");
+        write_valid_checkpoint(&app_data, "workspace-1", "note1", "content3");
+
+        let checkpoints = list_checkpoints(&app_data).expect("list checkpoints");
+        assert_eq!(checkpoints.len(), 3);
+        // Sorted by updated_at descending, then window_label, then note_id
+        // All have same updated_at, so sort by window_label then note_id
+        assert_eq!(checkpoints[0].key.window_label, "main");
+        assert_eq!(checkpoints[0].key.note_id, "note1");
+        assert_eq!(checkpoints[1].key.window_label, "main");
+        assert_eq!(checkpoints[1].key.note_id, "note2");
+        assert_eq!(checkpoints[2].key.window_label, "workspace-1");
+        assert_eq!(checkpoints[2].key.note_id, "note1");
     }
 }

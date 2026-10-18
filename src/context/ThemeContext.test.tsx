@@ -6,13 +6,16 @@ import { ThemeProvider, useTheme } from "./ThemeContext";
 
 const serviceMocks = vi.hoisted(() => ({
   getSettings: vi.fn(),
-  updateSettings: vi.fn(),
+  updateGlobalSettings: vi.fn(),
 }));
 const toastError = vi.hoisted(() => vi.fn());
 
 vi.mock("../services/notes", () => serviceMocks);
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => undefined),
+}));
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(async () => () => undefined),
 }));
 vi.mock("sonner", () => ({
   toast: { error: toastError },
@@ -33,7 +36,7 @@ describe("ThemeProvider appearance reset", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     serviceMocks.getSettings.mockResolvedValue({ ...persistedSettings });
-    serviceMocks.updateSettings.mockResolvedValue(undefined);
+    serviceMocks.updateGlobalSettings.mockResolvedValue(undefined);
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
       value: vi.fn(() => ({
@@ -72,8 +75,8 @@ describe("ThemeProvider appearance reset", () => {
     expect(currentTheme().titleBarFilenameVisible).toBe(true);
 
     serviceMocks.getSettings.mockClear();
-    serviceMocks.updateSettings.mockReset();
-    serviceMocks.updateSettings.mockRejectedValueOnce(
+    serviceMocks.updateGlobalSettings.mockReset();
+    serviceMocks.updateGlobalSettings.mockRejectedValueOnce(
       new Error("disk unavailable"),
     );
     toastError.mockClear();
@@ -87,14 +90,16 @@ describe("ThemeProvider appearance reset", () => {
     expect(toastError).toHaveBeenCalledWith(
       "Appearance settings could not be reset",
     );
-    expect(serviceMocks.getSettings).toHaveBeenCalledTimes(2);
+    // Global settings are patched without a prior read (#197); only the
+    // recovery reload reads them back.
+    expect(serviceMocks.getSettings).toHaveBeenCalledTimes(1);
     expect(currentTheme().editorWidthResizeEnabled).toBe(false);
     expect(currentTheme().editorToolbarVisible).toBe(true);
     expect(currentTheme().titleBarFilenameVisible).toBe(true);
 
     serviceMocks.getSettings.mockClear();
-    serviceMocks.updateSettings.mockReset();
-    serviceMocks.updateSettings.mockRejectedValueOnce(
+    serviceMocks.updateGlobalSettings.mockReset();
+    serviceMocks.updateGlobalSettings.mockRejectedValueOnce(
       new Error("disk still unavailable"),
     );
     toastError.mockClear();

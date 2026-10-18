@@ -312,10 +312,14 @@ export function PreviewApp({ filePath }: PreviewAppProps) {
           },
         },
       );
-      await draftCheckpointService.clearDraftCheckpoint({
-        windowLabel: "",
-        noteId: filePath,
-      });
+      try {
+        await draftCheckpointService.clearDraftCheckpoint({
+          windowLabel: "",
+          noteId: filePath,
+        });
+      } catch {
+        // Best-effort cleanup; conflict is already resolved.
+      }
     },
     [filePath],
   );

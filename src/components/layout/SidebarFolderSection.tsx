@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { ChevronRightIcon } from "../icons";
 
-const STORAGE_KEY = "scratch:foldersSectionCollapsed";
+const STORAGE_KEY = "ratura:foldersSectionCollapsed";
 
 type SidebarStorage = Pick<Storage, "getItem" | "setItem">;
 

@@ -32,7 +32,7 @@ describe("recovery notices", () => {
 
   it("drops malformed stored notices without throwing", () => {
     const storage = createStorage();
-    storage.setItem("scratch:pendingRecoveryNotices", "not-json");
+    storage.setItem("ratura:pendingRecoveryNotices", "not-json");
 
     expect(consumePendingRecoveryNotices(storage)).toEqual([]);
   });

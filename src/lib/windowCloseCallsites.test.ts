@@ -16,6 +16,11 @@ describe("safe window close call sites", () => {
       expect(source).toContain("closeWindowAfterSave");
       expect(source).not.toContain("appWindow.close()");
       expect(source).not.toContain("appWindow.destroy()");
+      const baseName = sourcePath.split(/[/\\]/).pop() || "";
+      if (baseName === "App.tsx") {
+        expect(source).toContain("requestCurrentWindowClose");
+        expect(source).not.toContain("getCurrentWindow().close()");
+      }
     },
   );
 

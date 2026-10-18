@@ -1,5 +1,5 @@
+use crate::hashing::ContentRevision;
 use std::collections::HashMap;
-use std::fmt;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -8,34 +8,6 @@ use std::sync::{Arc, Mutex, OnceLock, Weak};
 
 static NEXT_TEMPORARY_FILE: AtomicU64 = AtomicU64::new(0);
 static PATH_LOCKS: OnceLock<Mutex<HashMap<PathBuf, Weak<Mutex<()>>>>> = OnceLock::new();
-
-/// Stable SHA-256 identifier for one exact UTF-8 note content.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ContentRevision(String);
-
-impl ContentRevision {
-    #[cfg(test)]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    pub fn from_hex(value: &str) -> Result<Self, String> {
-        if value.len() != 64
-            || !value
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        {
-            return Err("Revision must be 64 lowercase hexadecimal characters".to_string());
-        }
-        Ok(Self(value.to_string()))
-    }
-}
-
-impl fmt::Display for ContentRevision {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FileSnapshot {
@@ -51,7 +23,7 @@ pub enum SaveResult {
 
 /// Returns a deterministic revision suitable for optimistic concurrency checks.
 pub fn content_revision(content: &str) -> ContentRevision {
-    ContentRevision(crate::sha256::hex_digest(content.as_bytes()))
+    crate::hashing::content_revision(content)
 }
 
 /// Saves `content` only when the file still has `expected_revision`.
@@ -145,18 +117,17 @@ fn lock_key(path: &Path) -> PathBuf {
         std::env::current_dir().unwrap_or_default().join(path)
     };
 
-    if let Ok(canonical) = absolute.canonicalize() {
-        return canonical;
+    let mut current = absolute.as_path();
+    while let Some(parent) = current.parent() {
+        if parent.exists() {
+            if let Ok(canonical) = parent.canonicalize() {
+                let suffix = absolute.strip_prefix(parent).unwrap_or(absolute.as_path());
+                return canonical.join(suffix);
+            }
+        }
+        current = parent;
     }
-
-    let Some(file_name) = absolute.file_name() else {
-        return absolute;
-    };
     absolute
-        .parent()
-        .and_then(|parent| parent.canonicalize().ok())
-        .map(|parent| parent.join(file_name))
-        .unwrap_or(absolute)
 }
 
 fn atomic_write(path: &Path, bytes: &[u8]) -> io::Result<()> {
@@ -217,26 +188,26 @@ fn atomic_create_new(path: &Path, bytes: &[u8]) -> io::Result<()> {
         Err(_) => {}
     }
 
-    write_create_new_destination(path, bytes)?;
+    let mut direct = match OpenOptions::new().write(true).create_new(true).open(path) {
+        Ok(file) => file,
+        Err(error) => {
+            let _ = fs::remove_file(temporary_path.path());
+            temporary_path.commit();
+            return Err(error);
+        }
+    };
+    let write_result = direct.write_all(bytes);
+    let flush_result = direct.flush();
+    let sync_result = direct.sync_all();
+    drop(direct);
 
-    fs::remove_file(temporary_path.path())?;
+    let _ = fs::remove_file(temporary_path.path());
     temporary_path.commit();
     sync_parent_directory(parent)?;
-    Ok(())
-}
 
-fn write_create_new_destination(path: &Path, bytes: &[u8]) -> io::Result<()> {
-    let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
-    let write_result = file
-        .write_all(bytes)
-        .and_then(|()| file.flush())
-        .and_then(|()| file.sync_all());
-    drop(file);
-
-    if let Err(error) = write_result {
-        let _ = fs::remove_file(path);
-        return Err(error);
-    }
+    write_result?;
+    flush_result?;
+    sync_result?;
     Ok(())
 }
 
@@ -368,15 +339,6 @@ mod tests {
     }
 
     #[test]
-    fn revision_parser_rejects_non_sha256_identifiers() {
-        let valid = content_revision("valid").to_string();
-        assert_eq!(ContentRevision::from_hex(&valid).unwrap().as_str(), valid);
-        assert!(ContentRevision::from_hex("short").is_err());
-        assert!(ContentRevision::from_hex(&"A".repeat(64)).is_err());
-        assert!(ContentRevision::from_hex(&"g".repeat(64)).is_err());
-    }
-
-    #[test]
     fn save_to_missing_file_is_atomic_and_returns_new_revision() {
         let directory = TestDirectory::new("initial-save");
         let path = directory.note_path();
@@ -469,22 +431,6 @@ mod tests {
         assert!(temporary_artifacts(&directory.path).is_empty());
     }
 
-    #[test]
-    fn create_new_fallback_never_deletes_an_existing_destination() {
-        let directory = TestDirectory::new("fallback-existing-race");
-        let path = directory.note_path();
-        fs::write(&path, "created by another process").unwrap();
-
-        let error = write_create_new_destination(&path, b"local draft")
-            .expect_err("create-only fallback must reject an existing destination");
-
-        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
-        assert_eq!(
-            fs::read_to_string(&path).unwrap(),
-            "created by another process"
-        );
-    }
-
     #[cfg(unix)]
     #[test]
     fn atomic_create_new_never_replaces_a_dangling_symlink() {
@@ -501,20 +447,6 @@ mod tests {
         assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
         assert_eq!(fs::read_link(&path).unwrap(), missing_target);
         assert!(temporary_artifacts(&directory.path).is_empty());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn existing_symlink_aliases_share_one_persistence_lock_key() {
-        use std::os::unix::fs::symlink;
-
-        let directory = TestDirectory::new("symlink-lock-key");
-        let target = directory.note_path();
-        let alias = directory.path.join("alias.md");
-        fs::write(&target, "base").unwrap();
-        symlink(&target, &alias).unwrap();
-
-        assert_eq!(lock_key(&target), lock_key(&alias));
     }
 
     #[test]

@@ -29,6 +29,7 @@ import type {
 } from "../../types/note";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { orderNoteListItems } from "../../lib/folderTree";
+import { SETTINGS_CHANGED_DOM_EVENT } from "../../lib/settingsScope";
 
 const menuItemClass =
   "px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2 rounded-sm";
@@ -377,8 +378,20 @@ export function NoteList({
   }, []);
 
   const refreshSettings = useCallback(() => {
-    notesService.getSettings().then(setSettings);
+    notesService.getSettings().then(setSettings).catch((error) => {
+      console.error("Failed to refresh settings:", error);
+    });
   }, []);
+
+  useEffect(() => {
+    const handleSettingsChanged = () => refreshSettings();
+    window.addEventListener(SETTINGS_CHANGED_DOM_EVENT, handleSettingsChanged);
+    return () =>
+      window.removeEventListener(
+        SETTINGS_CHANGED_DOM_EVENT,
+        handleSettingsChanged,
+      );
+  }, [refreshSettings]);
 
   // Memoize display items to prevent recalculation on every render
   const displayItems = useMemo(() => {

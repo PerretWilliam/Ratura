@@ -83,6 +83,7 @@ import { AlertBlockquote, ALERT_TYPES, ALERT_META } from "./AlertBlockquote";
 import { cn } from "../../lib/utils";
 import { plainTextFromMarkdown } from "../../lib/plainText";
 import { getTitleBarNoteInfoText } from "../../lib/titleBarNoteInfo";
+import { SETTINGS_CHANGED_DOM_EVENT } from "../../lib/settingsScope";
 import type { ConflictResolutionStrategy } from "../../lib/conflictResolution";
 import {
   choosePendingDraftRepresentation,
@@ -754,19 +755,24 @@ export function Editor({
         await previewMode.save(content);
       }
     : notesCtx!.saveNote;
+  const registerWorkspaceTransitionFlush =
+    notesCtx?.registerWorkspaceTransitionFlush;
+  const registerOpenNoteDraft = notesCtx?.registerOpenNoteDraft;
 
   const createNote = notesCtx?.createNote;
   const consumePendingNewNote = notesCtx?.consumePendingNewNote;
   const hasExternalChanges = previewMode
     ? previewMode.hasExternalChanges
     : notesCtx!.hasExternalChanges;
-  const hasSaveConflict = previewMode ? previewMode.hasSaveConflict : false;
+  const hasSaveConflict = previewMode
+    ? previewMode.hasSaveConflict
+    : Boolean(notesCtx!.noteConflict);
   const reloadCurrentNote = previewMode
     ? previewMode.reload
     : notesCtx!.reloadCurrentNote;
   const resolveNoteConflict = previewMode
     ? previewMode.resolveConflict
-    : undefined;
+    : notesCtx!.resolveNoteConflict;
   const reloadVersion = previewMode
     ? previewMode.reloadVersion
     : notesCtx!.reloadVersion;
@@ -909,6 +915,21 @@ export function Editor({
         });
     }
   }, [currentNote?.id, notes, previewMode]);
+
+  useEffect(() => {
+    if (previewMode) return;
+    const handleSettingsChanged = () => {
+      void notesService.getSettings().then(setSettings).catch((error) => {
+        console.error("Failed to reload editor settings:", error);
+      });
+    };
+    window.addEventListener(SETTINGS_CHANGED_DOM_EVENT, handleSettingsChanged);
+    return () =>
+      window.removeEventListener(
+        SETTINGS_CHANGED_DOM_EVENT,
+        handleSettingsChanged,
+      );
+  }, [previewMode]);
 
   // Calculate if current note is pinned
   const isPinned =
@@ -1133,6 +1154,11 @@ export function Editor({
     );
   }, [flushPendingSave, flushSourceSave]);
 
+  useEffect(() => {
+    if (!registerWorkspaceTransitionFlush) return;
+    return registerWorkspaceTransitionFlush(flushAllPendingSaves);
+  }, [flushAllPendingSaves, registerWorkspaceTransitionFlush]);
+
   const getOpenDraftSnapshot = useCallback(() => {
     const noteId = loadedNoteIdRef.current ?? currentNoteIdRef.current;
     const representation = choosePendingDraftRepresentation(
@@ -1159,6 +1185,11 @@ export function Editor({
   const flushAllPendingSavesRef = useRef(flushAllPendingSaves);
   flushAllPendingSavesRef.current = flushAllPendingSaves;
 
+  useEffect(() => {
+    if (!registerOpenNoteDraft) return;
+    return registerOpenNoteDraft(getOpenDraftSnapshot);
+  }, [getOpenDraftSnapshot, registerOpenNoteDraft]);
+
   const persistCurrentCrashCheckpoint = useCallback(async () => {
     const draft = getOpenDraftSnapshot();
     const checkpoint = createDraftCheckpointSnapshot(
@@ -1171,8 +1202,6 @@ export function Editor({
     checkpointScheduler.markDirty(checkpoint);
     await checkpointScheduler.flush();
   }, [checkpointScheduler, getOpenDraftSnapshot]);
-  const persistCurrentCrashCheckpointRef = useRef(persistCurrentCrashCheckpoint);
-  persistCurrentCrashCheckpointRef.current = persistCurrentCrashCheckpoint;
 
   useLayoutEffect(() => {
     return () => {
@@ -1195,6 +1224,12 @@ export function Editor({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const persistCurrentCrashCheckpointRef = useRef(persistCurrentCrashCheckpoint);
+
+  useLayoutEffect(() => {
+    persistCurrentCrashCheckpointRef.current = persistCurrentCrashCheckpoint;
+  }, [persistCurrentCrashCheckpoint]);
 
   queueCheckpointCaptureRef.current = () => {
     const now = Date.now();
@@ -2245,6 +2280,13 @@ export function Editor({
   // cannot await I/O, so it must never fire-and-forget the only draft.
   useEffect(() => {
     return () => {
+      const hasPendingSave =
+        needsSaveRef.current || sourceNeedsSaveRef.current;
+      if (hasPendingSave) {
+        void persistCurrentCrashCheckpointRef.current().catch((error) => {
+          console.error("Failed to persist crash checkpoint on unmount:", error);
+        });
+      }
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -2254,6 +2296,11 @@ export function Editor({
       if (checkpointCaptureTimerRef.current) {
         clearTimeout(checkpointCaptureTimerRef.current);
         checkpointCaptureStartedAtRef.current = null;
+      }
+      if (checkpointSchedulerRef.current) {
+        void checkpointSchedulerRef.current.dispose().catch((error) => {
+          console.error("Failed to dispose checkpoint scheduler:", error);
+        });
       }
       if (linkPopupRef.current) {
         linkPopupRef.current.destroy();
@@ -3049,7 +3096,6 @@ export function Editor({
               <Tooltip content="Save conflict — local draft preserved; choose which version to keep">
                 <DropdownMenu.Trigger asChild>
                   <button
-                    role="status"
                     className="h-7 px-2 flex items-center gap-1 text-xs text-text-muted hover:bg-bg-emphasis rounded font-medium"
                   >
                     <RefreshCwIcon className="w-4 h-4 stroke-[1.6]" />

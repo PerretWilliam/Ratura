@@ -1,4 +1,4 @@
-const STORAGE_KEY = "scratch:pendingRecoveryNotices";
+const STORAGE_KEY = "ratura:pendingRecoveryNotices";
 
 export interface RecoveryNotice {
   recoveredTo: string;
