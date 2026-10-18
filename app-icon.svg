@@ -10,12 +10,23 @@
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#paper)" filter="url(#shadow)"/>
   <rect x="100.5" y="100.5" width="823" height="823" rx="184.5" fill="none" stroke="#000" stroke-opacity="0.06"/>
-  <g stroke="#232220" stroke-width="42" stroke-linecap="round" fill="none">
-    <path d="M262 318 H700"/>
-    <path d="M262 448 H762"/>
-    <path d="M262 578 H640"/>
-    <path d="M262 708 H520"/>
+  <g stroke="#232220" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="#FBF9F4">
+    <circle cx="340" cy="398" r="138"/>
+    <circle cx="684" cy="398" r="138"/>
+    <circle cx="346" cy="404" r="82" fill="#DCD5CA" stroke="none"/>
+    <circle cx="678" cy="404" r="82" fill="#DCD5CA" stroke="none"/>
+    <path d="M512 392 C 655 392 742 482 742 600 C 742 720 640 806 512 806 C 384 806 282 720 282 600 C 282 482 369 392 512 392 Z"/>
+    <circle cx="395" cy="668" r="34" fill="#EBDDD5" stroke="none"/>
+    <circle cx="629" cy="668" r="34" fill="#EBDDD5" stroke="none"/>
+    <circle cx="438" cy="590" r="24" fill="#232220" stroke="none"/>
+    <circle cx="586" cy="590" r="24" fill="#232220" stroke="none"/>
+    <ellipse cx="512" cy="664" rx="32" ry="24" fill="#E5484D" stroke="none"/>
+    <path d="M482 714 Q 512 738 542 714" fill="none" stroke-width="16"/>
+    <g fill="none" stroke-width="12">
+      <path d="M352 618 L 228 594"/>
+      <path d="M352 652 L 224 664"/>
+      <path d="M672 618 L 796 594"/>
+      <path d="M672 652 L 800 664"/>
+    </g>
   </g>
-  <path d="M224 474 C 380 458, 580 446, 798 422" stroke="#E5484D" stroke-width="34" stroke-linecap="round" fill="none"/>
-  <path d="M590 666 V750" stroke="#E5484D" stroke-width="22" stroke-linecap="round"/>
 </svg>
