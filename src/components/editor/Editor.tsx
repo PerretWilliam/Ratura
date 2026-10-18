@@ -38,6 +38,7 @@ import tippy, { type Instance as TippyInstance } from "tippy.js";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { join } from "@tauri-apps/api/path";
 import { toast } from "sonner";
 import { mod, alt, shift, isMac, isWindows } from "../../lib/platform";
@@ -82,8 +83,20 @@ import { AlertBlockquote, ALERT_TYPES, ALERT_META } from "./AlertBlockquote";
 import { cn } from "../../lib/utils";
 import { plainTextFromMarkdown } from "../../lib/plainText";
 import { getTitleBarNoteInfoText } from "../../lib/titleBarNoteInfo";
+import type { ConflictResolutionStrategy } from "../../lib/conflictResolution";
+import {
+  choosePendingDraftRepresentation,
+  flushPendingDraftRepresentation,
+} from "../../lib/draftRepresentation";
 import { Button, IconButton, ToolbarButton, Tooltip } from "../ui";
 import * as notesService from "../../services/notes";
+import * as draftCheckpointService from "../../services/draftCheckpoint";
+import {
+  createDraftCheckpointSnapshot,
+  createDraftCheckpointScheduler,
+  nextCheckpointCaptureDelay,
+  type DraftCheckpointScheduler,
+} from "../../lib/draftCheckpoint";
 import { downloadPdf, downloadMarkdown } from "../../services/pdf";
 import type { Settings, NoteMetadata } from "../../types/note";
 import {
@@ -238,6 +251,8 @@ const ScratchCodeBlock = CodeBlockLowlight.extend({
     ];
   },
 });
+
+const AUTO_SAVE_DEBOUNCE_MS = 300;
 
 function formatDateTime(timestamp: number): string {
   const date = new Date(timestamp * 1000);
@@ -616,15 +631,30 @@ function FormatBar({
 }
 
 // Data source for preview mode — bypasses NotesContext
+export interface EditorPersistenceController {
+  flush: () => Promise<void>;
+  getDraft: () => {
+    noteId: string | null;
+    content: string;
+    dirty: boolean;
+  };
+}
+
 export interface PreviewModeData {
   content: string | null;
   title: string;
   filePath: string;
   modified: number;
+  revision: string;
   hasExternalChanges: boolean;
+  hasSaveConflict: boolean;
   reloadVersion: number;
   save: (content: string) => Promise<void>;
   reload: () => Promise<void>;
+  resolveConflict: (strategy: ConflictResolutionStrategy) => Promise<void>;
+  registerPersistenceController: (
+    controller: EditorPersistenceController,
+  ) => () => void;
 }
 
 interface EditorProps {
@@ -635,6 +665,9 @@ interface EditorProps {
   onEditorReady?: (editor: TiptapEditor | null) => void;
   onSaveToFolder?: () => void;
   saveToFolderDisabled?: boolean;
+  onPersistenceControllerReady?: (
+    controller: EditorPersistenceController | null,
+  ) => void;
 }
 
 /**
@@ -698,6 +731,7 @@ export function Editor({
   previewMode,
   onSaveToFolder,
   saveToFolderDisabled,
+  onPersistenceControllerReady,
 }: EditorProps) {
   // Always call the hook (rules of hooks), but it returns null outside NotesProvider
   const notesCtx = useOptionalNotes();
@@ -710,6 +744,7 @@ export function Editor({
           content: previewMode.content,
           path: previewMode.filePath,
           modified: previewMode.modified,
+          revision: previewMode.revision,
         }
       : null
     : (notesCtx?.currentNote ?? null);
@@ -725,9 +760,13 @@ export function Editor({
   const hasExternalChanges = previewMode
     ? previewMode.hasExternalChanges
     : notesCtx!.hasExternalChanges;
+  const hasSaveConflict = previewMode ? previewMode.hasSaveConflict : false;
   const reloadCurrentNote = previewMode
     ? previewMode.reload
     : notesCtx!.reloadCurrentNote;
+  const resolveNoteConflict = previewMode
+    ? previewMode.resolveConflict
+    : undefined;
   const reloadVersion = previewMode
     ? previewMode.reloadVersion
     : notesCtx!.reloadVersion;
@@ -749,6 +788,7 @@ export function Editor({
     titleBarFilenameVisible,
   } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   // Force re-render when selection changes to update toolbar active states
   const [, setSelectionKey] = useState(0);
   const [copyMenuOpen, setCopyMenuOpen] = useState(false);
@@ -777,8 +817,13 @@ export function Editor({
   const isSidebarActive = sidebarVisible && !focusMode;
   // Source mode state
   const [sourceMode, setSourceMode] = useState(false);
+  const sourceModeRef = useRef(sourceMode);
+  sourceModeRef.current = sourceMode;
   const [sourceContent, setSourceContent] = useState("");
   const sourceTimeoutRef = useRef<number | null>(null);
+  const sourceContentRef = useRef("");
+  const sourceNeedsSaveRef = useRef(false);
+  const sourceSaveGenerationRef = useRef(0);
   const sourceModeTransitionRef = useRef<{
     topBlockIndex: number;
     cursorBlockIndex: number;
@@ -795,6 +840,25 @@ export function Editor({
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<number | null>(null);
+  const checkpointCaptureTimerRef = useRef<number | null>(null);
+  const checkpointCaptureStartedAtRef = useRef<number | null>(null);
+  const queueCheckpointCaptureRef = useRef<() => void>(() => undefined);
+  const checkpointSchedulerRef = useRef<DraftCheckpointScheduler | null>(null);
+  if (!checkpointSchedulerRef.current) {
+    checkpointSchedulerRef.current = createDraftCheckpointScheduler(
+      {
+        write: draftCheckpointService.writeDraftCheckpoint,
+        clear: draftCheckpointService.clearDraftCheckpoint,
+      },
+      {
+        delayMs: 250,
+        onError: (error) => {
+          console.error("Failed to persist crash checkpoint:", error);
+        },
+      },
+    );
+  }
+  const checkpointScheduler = checkpointSchedulerRef.current;
   const linkPopupRef = useRef<TippyInstance | null>(null);
   const mathPopupRef = useRef<TippyInstance | null>(null);
   const noteNavigatorPopupRef = useRef<TippyInstance | null>(null);
@@ -804,14 +868,18 @@ export function Editor({
   const currentNoteIdRef = useRef<string | null>(null);
   // Track if we need to save (use ref to avoid computing markdown on every keystroke)
   const needsSaveRef = useRef(false);
+  const saveGenerationRef = useRef(0);
   // Stable refs for wikilink click handler (avoids re-registering listener on every notes change)
   const notesRef = useRef(notes);
   notesRef.current = notes;
   const notesCtxRef = useRef(notesCtx);
   notesCtxRef.current = notesCtx;
+  const currentNoteRef = useRef(currentNote);
+  currentNoteRef.current = currentNote;
 
   // Keep ref in sync with current note ID
   currentNoteIdRef.current = currentNote?.id ?? null;
+  sourceContentRef.current = sourceContent;
 
   // Get markdown from editor
   const getMarkdown = useCallback(
@@ -944,8 +1012,8 @@ export function Editor({
     async (noteId: string, content: string) => {
       setIsSaving(true);
       try {
-        lastSaveRef.current = { noteId, content };
         await saveNote(content, noteId);
+        lastSaveRef.current = { noteId, content };
       } finally {
         setIsSaving(false);
       }
@@ -962,11 +1030,19 @@ export function Editor({
 
     // Use loadedNoteIdRef (the note in the editor) not currentNoteIdRef (which may have changed)
     if (needsSaveRef.current && editorRef.current && loadedNoteIdRef.current) {
-      needsSaveRef.current = false;
+      const generation = saveGenerationRef.current;
       const markdown = getMarkdown(editorRef.current);
       await saveImmediately(loadedNoteIdRef.current, markdown);
+      if (saveGenerationRef.current === generation) {
+        needsSaveRef.current = false;
+        setIsDirty(sourceNeedsSaveRef.current);
+        await checkpointScheduler.handleSaveOutcome("saved", {
+          windowLabel: getCurrentWindow().label,
+          noteId: loadedNoteIdRef.current,
+        });
+      }
     }
-  }, [saveImmediately, getMarkdown]);
+  }, [checkpointScheduler, saveImmediately, getMarkdown]);
 
   // Schedule a debounced save (markdown computed only when timer fires)
   const scheduleSave = useCallback(() => {
@@ -978,6 +1054,9 @@ export function Editor({
     if (!savingNoteId) return;
 
     needsSaveRef.current = true;
+    setIsDirty(true);
+    queueCheckpointCaptureRef.current();
+    const generation = ++saveGenerationRef.current;
 
     saveTimeoutRef.current = window.setTimeout(async () => {
       if (currentNoteIdRef.current !== savingNoteId || !needsSaveRef.current) {
@@ -986,12 +1065,186 @@ export function Editor({
 
       // Compute markdown only now, when we actually save
       if (editorRef.current) {
-        needsSaveRef.current = false;
         const markdown = getMarkdown(editorRef.current);
-        await saveImmediately(savingNoteId, markdown);
+        try {
+          await saveImmediately(savingNoteId, markdown);
+          if (saveGenerationRef.current === generation) {
+            needsSaveRef.current = false;
+            setIsDirty(sourceNeedsSaveRef.current);
+            await checkpointScheduler.handleSaveOutcome("saved", {
+              windowLabel: getCurrentWindow().label,
+              noteId: savingNoteId,
+            });
+          }
+        } catch (error) {
+          needsSaveRef.current = true;
+          console.error("Failed to save note:", error);
+          toast.error("Failed to save note");
+        }
       }
-    }, 500);
-  }, [saveImmediately, getMarkdown, currentNote?.id]);
+    }, AUTO_SAVE_DEBOUNCE_MS);
+  }, [checkpointScheduler, saveImmediately, getMarkdown, currentNote?.id]);
+
+  const flushSourceSave = useCallback(async () => {
+    if (sourceTimeoutRef.current) {
+      clearTimeout(sourceTimeoutRef.current);
+      sourceTimeoutRef.current = null;
+    }
+    const noteId = loadedNoteIdRef.current ?? currentNoteIdRef.current;
+    if (!sourceNeedsSaveRef.current || !noteId) return;
+
+    const generation = sourceSaveGenerationRef.current;
+    await saveImmediately(noteId, sourceContentRef.current);
+    if (sourceSaveGenerationRef.current === generation) {
+      sourceNeedsSaveRef.current = false;
+      setIsDirty(needsSaveRef.current);
+      await checkpointScheduler.handleSaveOutcome("saved", {
+        windowLabel: getCurrentWindow().label,
+        noteId,
+      });
+    }
+  }, [checkpointScheduler, saveImmediately]);
+
+  const flushAllPendingSaves = useCallback(async () => {
+    await flushPendingDraftRepresentation(
+      sourceModeRef.current,
+      sourceNeedsSaveRef.current,
+      needsSaveRef.current,
+      {
+        discardSource: () => {
+          if (sourceTimeoutRef.current) {
+            clearTimeout(sourceTimeoutRef.current);
+            sourceTimeoutRef.current = null;
+          }
+          sourceNeedsSaveRef.current = false;
+          sourceSaveGenerationRef.current += 1;
+        },
+        discardFormatted: () => {
+          if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+          }
+          needsSaveRef.current = false;
+          saveGenerationRef.current += 1;
+        },
+        flushSource: flushSourceSave,
+        flushFormatted: flushPendingSave,
+      },
+    );
+  }, [flushPendingSave, flushSourceSave]);
+
+  const getOpenDraftSnapshot = useCallback(() => {
+    const noteId = loadedNoteIdRef.current ?? currentNoteIdRef.current;
+    const representation = choosePendingDraftRepresentation(
+      sourceModeRef.current,
+      sourceNeedsSaveRef.current,
+      needsSaveRef.current,
+    );
+    const useSource =
+      representation === "source" ||
+      (representation === null && sourceModeRef.current);
+    if (useSource) {
+      return {
+        noteId,
+        content: sourceContentRef.current,
+        dirty: representation !== null,
+      };
+    }
+    return {
+      noteId,
+      content: editorRef.current ? getMarkdown(editorRef.current) : "",
+      dirty: representation !== null,
+    };
+  }, [getMarkdown]);
+  const flushAllPendingSavesRef = useRef(flushAllPendingSaves);
+  flushAllPendingSavesRef.current = flushAllPendingSaves;
+
+  const persistCurrentCrashCheckpoint = useCallback(async () => {
+    const draft = getOpenDraftSnapshot();
+    const checkpoint = createDraftCheckpointSnapshot(
+      getCurrentWindow().label,
+      draft,
+      currentNoteRef.current,
+      new Date().toISOString(),
+    );
+    if (!checkpoint) return;
+    checkpointScheduler.markDirty(checkpoint);
+    await checkpointScheduler.flush();
+  }, [checkpointScheduler, getOpenDraftSnapshot]);
+  const persistCurrentCrashCheckpointRef = useRef(persistCurrentCrashCheckpoint);
+  persistCurrentCrashCheckpointRef.current = persistCurrentCrashCheckpoint;
+
+  useLayoutEffect(() => {
+    return () => {
+      const hasPendingSave =
+        needsSaveRef.current || sourceNeedsSaveRef.current;
+      if (hasPendingSave) {
+        void flushAllPendingSavesRef.current().catch(() => {
+          // Best-effort: ignore async failures during unmount
+        });
+      }
+      void persistCurrentCrashCheckpointRef.current().catch(() => {
+        // Best-effort: ignore async failures during unmount
+      });
+      if (checkpointCaptureTimerRef.current) {
+        clearTimeout(checkpointCaptureTimerRef.current);
+        checkpointCaptureTimerRef.current = null;
+        checkpointCaptureStartedAtRef.current = null;
+      }
+      checkpointSchedulerRef.current?.dispose();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  queueCheckpointCaptureRef.current = () => {
+    const now = Date.now();
+    checkpointCaptureStartedAtRef.current ??= now;
+    if (checkpointCaptureTimerRef.current) {
+      clearTimeout(checkpointCaptureTimerRef.current);
+    }
+    const delay = nextCheckpointCaptureDelay(
+      now - checkpointCaptureStartedAtRef.current,
+      250,
+      750,
+    );
+    checkpointCaptureTimerRef.current = window.setTimeout(() => {
+      checkpointCaptureTimerRef.current = null;
+      checkpointCaptureStartedAtRef.current = null;
+      void persistCurrentCrashCheckpoint();
+    }, delay);
+  };
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") return;
+      if (checkpointCaptureTimerRef.current) {
+        clearTimeout(checkpointCaptureTimerRef.current);
+        checkpointCaptureTimerRef.current = null;
+      }
+      checkpointCaptureStartedAtRef.current = null;
+      void persistCurrentCrashCheckpoint();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [persistCurrentCrashCheckpoint]);
+
+  useEffect(() => {
+    const controller: EditorPersistenceController = {
+      flush: flushAllPendingSaves,
+      getDraft: getOpenDraftSnapshot,
+    };
+    if (previewMode) {
+      return previewMode.registerPersistenceController(controller);
+    }
+    onPersistenceControllerReady?.(controller);
+    return () => onPersistenceControllerReady?.(null);
+  }, [
+    flushAllPendingSaves,
+    getOpenDraftSnapshot,
+    onPersistenceControllerReady,
+    previewMode,
+  ]);
 
   const closeMathPopup = useCallback(() => {
     if (mathPopupRef.current) {
@@ -1868,9 +2121,15 @@ export function Editor({
       }
     }
 
-    // Flush any pending save before switching to a different note
-    if (!isSameNote && needsSaveRef.current) {
-      flushPendingSave();
+    // Flush the active representation before switching to a different note.
+    if (
+      !isSameNote &&
+      (needsSaveRef.current || sourceNeedsSaveRef.current)
+    ) {
+      void flushAllPendingSavesRef.current().catch((error) => {
+        console.error("Failed to save before switching notes:", error);
+        toast.error("Failed to save before switching notes");
+      });
     }
     // Reset source mode when genuinely switching notes (renames return early above)
     if (!isSameNote) {
@@ -1982,21 +2241,19 @@ export function Editor({
     scrollContainerRef.current?.scrollTo(0, 0);
   }, []);
 
-  // Cleanup on unmount - flush pending saves
+  // Save barriers run before settings and window transitions. React cleanup
+  // cannot await I/O, so it must never fire-and-forget the only draft.
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      // Flush any pending save before unmounting
-      if (needsSaveRef.current && editorRef.current) {
-        needsSaveRef.current = false;
-        const manager = editorRef.current.storage.markdown?.manager;
-        const markdown = manager
-          ? manager.serialize(editorRef.current.getJSON())
-          : editorRef.current.getText();
-        // Fire and forget - save will complete in background
-        saveNote(markdown);
+      if (sourceTimeoutRef.current) {
+        clearTimeout(sourceTimeoutRef.current);
+      }
+      if (checkpointCaptureTimerRef.current) {
+        clearTimeout(checkpointCaptureTimerRef.current);
+        checkpointCaptureStartedAtRef.current = null;
       }
       if (linkPopupRef.current) {
         linkPopupRef.current.destroy();
@@ -2608,15 +2865,29 @@ export function Editor({
   const handleSourceChange = useCallback(
     (value: string) => {
       setSourceContent(value);
+      sourceContentRef.current = value;
+      sourceNeedsSaveRef.current = true;
+      setIsDirty(true);
+      queueCheckpointCaptureRef.current();
+      const generation = ++sourceSaveGenerationRef.current;
       if (sourceTimeoutRef.current) {
         clearTimeout(sourceTimeoutRef.current);
       }
       sourceTimeoutRef.current = window.setTimeout(async () => {
+        sourceTimeoutRef.current = null;
         if (currentNote) {
           setIsSaving(true);
           try {
-            lastSaveRef.current = { noteId: currentNote.id, content: value };
             await saveNote(value, currentNote.id);
+            lastSaveRef.current = { noteId: currentNote.id, content: value };
+            if (sourceSaveGenerationRef.current === generation) {
+              sourceNeedsSaveRef.current = false;
+              setIsDirty(needsSaveRef.current);
+              await checkpointScheduler.handleSaveOutcome("saved", {
+                windowLabel: getCurrentWindow().label,
+                noteId: currentNote.id,
+              });
+            }
           } catch (error) {
             console.error("Failed to save note:", error);
             toast.error("Failed to save note");
@@ -2624,9 +2895,9 @@ export function Editor({
             setIsSaving(false);
           }
         }
-      }, 300);
+      }, AUTO_SAVE_DEBOUNCE_MS);
     },
-    [currentNote, saveNote],
+    [checkpointScheduler, currentNote, saveNote],
   );
 
   if (!currentNote) {
@@ -2773,7 +3044,52 @@ export function Editor({
         <div
           className={`titlebar-no-drag flex items-center gap-px shrink-0 transition-opacity duration-400 ${needsSidebarDelay ? "delay-200" : ""} ${focusMode ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         >
-          {hasExternalChanges ? (
+          {hasSaveConflict && resolveNoteConflict ? (
+            <DropdownMenu.Root>
+              <Tooltip content="Save conflict — local draft preserved; choose which version to keep">
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    role="status"
+                    className="h-7 px-2 flex items-center gap-1 text-xs text-text-muted hover:bg-bg-emphasis rounded font-medium"
+                  >
+                    <RefreshCwIcon className="w-4 h-4 stroke-[1.6]" />
+                    <span>Resolve Conflict</span>
+                  </button>
+                </DropdownMenu.Trigger>
+              </Tooltip>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  className="min-w-48 p-1 bg-bg border border-border rounded-md shadow-lg z-50"
+                >
+                  <DropdownMenu.Item
+                    className="px-2 py-1.5 text-sm rounded outline-none cursor-pointer hover:bg-bg-emphasis focus:bg-bg-emphasis"
+                    onSelect={() => {
+                      void resolveNoteConflict("keepLocal").catch((error) => {
+                        toast.error(`Conflict remains: ${error}`);
+                      });
+                    }}
+                  >
+                    Keep My Changes
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    className="px-2 py-1.5 text-sm rounded outline-none cursor-pointer hover:bg-bg-emphasis focus:bg-bg-emphasis"
+                    onSelect={() => {
+                      void resolveNoteConflict("useRemote").catch((error) => {
+                        toast.error(`Conflict remains: ${error}`);
+                      });
+                    }}
+                  >
+                    Use Version on Disk
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator className="h-px bg-border my-1" />
+                  <div className="px-2 py-1 text-[11px] text-text-muted max-w-56">
+                    A recovery copy is created before either action.
+                  </div>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          ) : hasExternalChanges ? (
             <Tooltip
               content={`External changes detected (${mod}${isMac ? "" : "+"}R to refresh)`}
             >
@@ -2789,6 +3105,15 @@ export function Editor({
             <Tooltip content="Saving...">
               <div className="h-7 w-7 flex items-center justify-center">
                 <SpinnerIcon className="w-4.5 h-4.5 text-text-muted/40 stroke-[1.5] animate-spin" />
+              </div>
+            </Tooltip>
+          ) : isDirty ? (
+            <Tooltip content="Unsaved changes">
+              <div
+                role="status"
+                className="h-7 w-7 flex items-center justify-center"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-text-muted/60" />
               </div>
             </Tooltip>
           ) : (
