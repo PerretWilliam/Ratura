@@ -24,7 +24,6 @@ import {
 } from "../icons";
 import type { AttachmentMetadata, Settings } from "../../types/note";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { getSortStrategy } from "../../lib/sorting";
 
 const menuItemClass =
   "px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2 rounded-sm";
@@ -384,16 +383,8 @@ export function NoteList({
         modified: r.modified,
       }));
     }
-    const strategy = getSortStrategy(settings?.sortOrder);
-    const sorted = [...notes];
-    sorted.sort((a, b) => {
-      const ap = pinnedIds.has(a.id);
-      const bp = pinnedIds.has(b.id);
-      if (ap !== bp) return ap ? -1 : 1;
-      return strategy.compareNotes(a, b);
-    });
-    return sorted;
-  }, [searchQuery, searchResults, notes, settings?.sortOrder, pinnedIds]);
+    return notes;
+  }, [searchQuery, searchResults, notes]);
 
   const displayAttachments = useMemo(() => {
     if (!searchQuery.trim()) return attachments;

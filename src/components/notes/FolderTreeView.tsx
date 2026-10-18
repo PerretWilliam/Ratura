@@ -581,7 +581,7 @@ interface FolderTreeViewProps {
 
 export function FolderTreeView({
   pinnedIds,
-  settings,
+  settings: _settings,
   multiSelectedNoteIds,
   setMultiSelectedNoteIds,
   lastClickedNoteId,
@@ -635,15 +635,8 @@ export function FolderTreeView({
   }, [collapsedFolders]);
 
   const tree = useMemo(
-    () =>
-      buildFolderTree(
-        notes,
-        attachments,
-        pinnedIds,
-        knownFolders,
-        settings?.sortOrder,
-      ),
-    [notes, attachments, pinnedIds, knownFolders, settings?.sortOrder],
+    () => buildFolderTree(notes, attachments, pinnedIds, knownFolders),
+    [notes, attachments, pinnedIds, knownFolders],
   );
 
   const handleToggleCollapse = useCallback((path: string) => {
