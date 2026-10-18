@@ -585,6 +585,8 @@ pub struct Settings {
     pub spell_check_enabled: Option<bool>,
     #[serde(rename = "autoCorrectEnabled")]
     pub auto_correct_enabled: Option<bool>,
+    #[serde(rename = "pasteMode")]
+    pub paste_mode: Option<String>,
     #[serde(rename = "editorWidth")]
     pub editor_width: Option<String>,
     #[serde(rename = "defaultNoteName")]
@@ -629,6 +631,8 @@ pub struct GlobalSettings {
     pub spell_check_enabled: Option<bool>,
     #[serde(rename = "autoCorrectEnabled")]
     pub auto_correct_enabled: Option<bool>,
+    #[serde(rename = "pasteMode")]
+    pub paste_mode: Option<String>,
     #[serde(rename = "editorWidth")]
     pub editor_width: Option<String>,
     #[serde(rename = "defaultNoteName")]
@@ -678,6 +682,7 @@ fn split_settings(settings: Settings) -> (GlobalSettings, WorkspaceSettings) {
         text_direction,
         spell_check_enabled,
         auto_correct_enabled,
+        paste_mode,
         editor_width,
         default_note_name,
         interface_zoom,
@@ -702,6 +707,7 @@ fn split_settings(settings: Settings) -> (GlobalSettings, WorkspaceSettings) {
             text_direction,
             spell_check_enabled,
             auto_correct_enabled,
+            paste_mode,
             editor_width,
             default_note_name,
             interface_zoom,
@@ -734,6 +740,7 @@ fn merge_settings(global: &GlobalSettings, workspace: &WorkspaceSettings) -> Set
         text_direction: global.text_direction.clone(),
         spell_check_enabled: global.spell_check_enabled,
         auto_correct_enabled: global.auto_correct_enabled,
+        paste_mode: global.paste_mode.clone(),
         editor_width: global.editor_width.clone(),
         default_note_name: global.default_note_name.clone(),
         interface_zoom: global.interface_zoom,
@@ -6872,6 +6879,22 @@ mod settings_tests {
         split_settings, AppConfig, GlobalSettings, Settings, SettingsChangeScope,
         SettingsChangeTargets, SettingsChangedPayload, WorkspaceBindings, WorkspaceSettings,
     };
+
+    #[test]
+    fn paste_mode_round_trips_through_global_settings() {
+        let settings: Settings =
+            serde_json::from_str(r#"{"theme":{"mode":"system"},"pasteMode":"plain"}"#)
+                .expect("settings should deserialize");
+        let (global, workspace) = split_settings(settings);
+        assert_eq!(global.paste_mode.as_deref(), Some("plain"));
+        let patched =
+            apply_settings_patch(&global, serde_json::json!({ "pasteMode": "code-block" }))
+                .expect("patch should apply");
+        assert_eq!(
+            merge_settings(&patched, &workspace).paste_mode.as_deref(),
+            Some("code-block")
+        );
+    }
 
     #[test]
     fn settings_preserve_sidebar_note_sort_order() {
