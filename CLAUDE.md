@@ -15,7 +15,7 @@ npm run tauri build  # Build production app
 
 ## CI
 
-Runs on every push to `main` and on PRs. Validates frontend build (`tsc` + Vite) and Rust compilation (`cargo check` + `cargo clippy`) on an Ubuntu runner.
+Runs on pushes to `main` and `integration` and on every PR (Ubuntu runner): frontend build, vitest, `cargo fmt --check`, `cargo clippy --all-targets -D warnings`, `cargo test`.
 
 ## Key Patterns
 
@@ -39,7 +39,5 @@ Runs on every push to `main` and on PRs. Validates frontend build (`tsc` + Vite)
 ## Releasing
 
 1. Bump version in `package.json` and `src-tauri/tauri.conf.json`
-2. Commit to `main`, then tag and push: `git tag v0.5.0 && git push origin v0.5.0`
-3. The release workflow builds all platforms and creates a draft GitHub release
-4. Update the description in `latest.json` from GitHub after the action finishes
-5. Review, edit notes, and publish
+2. Merge to `main`: the release workflow sees a version without a tag, builds all platforms, and publishes `vX.Y.Z` with `latest.json` for the updater
+3. The updater key lives in `~/.tauri/ratura.key`; the private key is the `TAURI_SIGNING_PRIVATE_KEY` repo secret

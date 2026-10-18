@@ -35,7 +35,9 @@ A minimalist, offline-first markdown note-taking app for macOS, Windows, and Lin
 
 ## Installation
 
-Ratura does not publish releases yet. Build it from source:
+Download the latest build for macOS, Windows or Linux from [Releases](https://github.com/PerretWilliam/Ratura/releases/latest). The macOS build is not notarized: right-click the app and choose Open the first time.
+
+Or build it from source:
 
 **Prerequisites:** Node.js 18+, Rust 1.70+
 
