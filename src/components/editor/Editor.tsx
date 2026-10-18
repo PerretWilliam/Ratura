@@ -81,6 +81,7 @@ import {
 import { AlertBlockquote, ALERT_TYPES, ALERT_META } from "./AlertBlockquote";
 import { cn } from "../../lib/utils";
 import { plainTextFromMarkdown } from "../../lib/plainText";
+import { getTitleBarNoteInfoText } from "../../lib/titleBarNoteInfo";
 import { Button, IconButton, ToolbarButton, Tooltip } from "../ui";
 import * as notesService from "../../services/notes";
 import { downloadPdf, downloadMarkdown } from "../../services/pdf";
@@ -737,13 +738,31 @@ export function Editor({
   const canGoForward = notesCtx?.canGoForward ?? false;
   const goBack = notesCtx?.goBack;
   const goForward = notesCtx?.goForward;
-  const { textDirection, pasteMode, spellCheckEnabled, autoCorrectEnabled } =
-    useTheme();
+  const {
+    textDirection,
+    pasteMode,
+    spellCheckEnabled,
+    autoCorrectEnabled,
+    editorWidthResizeEnabled,
+    editorToolbarVisible,
+    titleBarModifiedDateVisible,
+    titleBarFilenameVisible,
+  } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   // Force re-render when selection changes to update toolbar active states
   const [, setSelectionKey] = useState(0);
   const [copyMenuOpen, setCopyMenuOpen] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const titleBarNoteInfo = currentNote
+    ? getTitleBarNoteInfoText(
+        {
+          modifiedDateVisible: titleBarModifiedDateVisible,
+          filenameVisible: titleBarFilenameVisible,
+        },
+        currentNote,
+        formatDateTime,
+      )
+    : null;
   // Delay transition classes until after initial mount to avoid format bar height animation on note load
   const [hasTransitioned, setHasTransitioned] = useState(false);
   useEffect(() => {
@@ -2745,9 +2764,11 @@ export function Editor({
               <ArrowRightIcon className="w-4.5 h-4.5 stroke-[1.5]" />
             </IconButton>
           )}
-          <span className="text-xs text-text-muted mb-px truncate">
-            {formatDateTime(currentNote.modified)}
-          </span>
+          {titleBarNoteInfo && (
+            <span className="text-xs text-text-muted mb-px truncate">
+              {titleBarNoteInfo}
+            </span>
+          )}
         </div>
         <div
           className={`titlebar-no-drag flex items-center gap-px shrink-0 transition-opacity duration-400 ${needsSidebarDelay ? "delay-200" : ""} ${focusMode ? "opacity-0 pointer-events-none" : "opacity-100"}`}
@@ -2920,22 +2941,27 @@ export function Editor({
       </div>
 
       {/* Format Bar – transition only after initial mount to avoid height animation on note load */}
-      <div
-        data-format-bar
-        className={`${focusMode || sourceMode ? "opacity-0 max-h-0 overflow-hidden pointer-events-none" : "opacity-100 max-h-20"} ${hasTransitioned ? `transition-all duration-400 ${needsSidebarDelay ? "delay-200" : ""}` : ""}`}
-      >
-        <FormatBar
-          editor={editor}
-          onAddLink={handleAddLink}
-          onAddBlockMath={handleAddBlockMath}
-          onAddImage={handleAddImage}
-        />
-      </div>
+      {editorToolbarVisible && (
+        <div
+          data-format-bar
+          className={`${focusMode || sourceMode ? "opacity-0 max-h-0 overflow-hidden pointer-events-none" : "opacity-100 max-h-20"} ${hasTransitioned ? `transition-all duration-400 ${needsSidebarDelay ? "delay-200" : ""}` : ""}`}
+        >
+          <FormatBar
+            editor={editor}
+            onAddLink={handleAddLink}
+            onAddBlockMath={handleAddBlockMath}
+            onAddImage={handleAddImage}
+          />
+        </div>
+      )}
 
       {/* Editor content area with resize handles overlay */}
       <div data-editor-content-area className="flex-1 relative overflow-hidden">
         {!focusMode && !sourceMode && (
-          <EditorWidthHandles containerRef={scrollContainerRef} />
+          <EditorWidthHandles
+            containerRef={scrollContainerRef}
+            enabled={editorWidthResizeEnabled}
+          />
         )}
         <div
           data-editor-scroll

@@ -70,6 +70,10 @@ export interface Settings {
   autoCorrectEnabled?: boolean;
   editorWidth?: EditorWidth;
   customEditorWidthPx?: number;
+  editorWidthResizeEnabled?: boolean;
+  editorToolbarVisible?: boolean;
+  titleBarModifiedDateVisible?: boolean;
+  titleBarFilenameVisible?: boolean;
   sidebarWidthPx?: number;
   defaultNoteName?: string;
   interfaceZoom?: number;
