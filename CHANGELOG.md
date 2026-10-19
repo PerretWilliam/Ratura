@@ -7,7 +7,8 @@ Each release's notes on GitHub are taken from its section below, so add a sectio
 ## [1.2.1] - 2026-10-19
 
 ### Changed
-- Dragging a block now outlines the whole block, shows a preview of it under the pointer and keeps the grabbing cursor until you drop it. Hovering the grip outlines the block it will move.
+- Dragging a block now outlines the whole block, shows a preview of it under the pointer and keeps the grabbing cursor until you drop it. Hovering the grip outlines the block it will move. Releasing the block over itself leaves it in place.
+- The + next to the grip adds the new block below instead of above.
 
 ### Fixed
 - Translated the texts that were still in English: AI edit, update notice, Git and CLI settings, table colors, pin and delete menus, and a few tooltips.

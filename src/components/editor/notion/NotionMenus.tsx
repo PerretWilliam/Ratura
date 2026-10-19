@@ -640,6 +640,14 @@ export function SelectionMenu({ editor, onEditLink }: SelectionMenuProps) {
   );
 }
 
+// Releasing over the dragged block itself leaves it where it was.
+function isPointOverRect(
+  point: { left: number; top: number },
+  rect: DOMRect | null,
+): boolean {
+  return Boolean(rect && point.top >= rect.top && point.top <= rect.bottom);
+}
+
 export function BlockDragControls({ editor }: { editor: Editor }) {
   const t = useT();
   const [nodePos, setNodePos] = useState<number | null>(null);
@@ -667,6 +675,7 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
     origin: HTMLElement;
     active: boolean;
     ghost: HTMLElement | null;
+    ghostOffset: { left: number; top: number };
   } | null>(null);
   const getTargetRect = useCallback(
     (target: BlockDragTarget | null) => {
@@ -797,6 +806,21 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
     };
   }, [editor]);
 
+  useEffect(() => {
+    const syncOutlineWithScroll = () => {
+      const session = pointerDragSessionRef.current;
+      setSourceOutline(
+        session?.active ? getTargetRect(session.target) : null,
+      );
+    };
+    document.addEventListener("scroll", syncOutlineWithScroll, {
+      capture: true,
+      passive: true,
+    });
+    return () =>
+      document.removeEventListener("scroll", syncOutlineWithScroll, true);
+  }, [getTargetRect]);
+
   const resetPointerDrag = useCallback(() => {
     const session = pointerDragSessionRef.current;
     pointerDragSessionRef.current = null;
@@ -842,6 +866,7 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
         origin,
         active: false,
         ghost: null,
+        ghostOffset: { left: 0, top: 0 },
       };
       document.body.classList.add("notion-block-dragging");
       try {
@@ -896,7 +921,18 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
         const source = editor.view.nodeDOM(session.target.pos);
         if (source instanceof HTMLElement) {
           const ghost = document.createElement("div");
-          ghost.className = `${editorDom.className} notion-block-drag-ghost`;
+          // Typography classes only: layout utilities would pad the preview.
+          ghost.className = [
+            ...Array.from(editorDom.classList).filter((name) =>
+              /^(ProseMirror$|prose|dark:prose)/.test(name),
+            ),
+            "notion-block-drag-ghost",
+          ].join(" ");
+          const sourceRect = source.getBoundingClientRect();
+          session.ghostOffset = {
+            left: session.startPoint.left - sourceRect.left,
+            top: session.startPoint.top - sourceRect.top,
+          };
           ghost.setAttribute("aria-hidden", "true");
           ghost.appendChild(source.cloneNode(true));
           document.body.appendChild(ghost);
@@ -910,15 +946,13 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
       setSourceOutline(sourceRect);
       if (session.ghost && sourceRect) {
         const zoom = getInterfaceZoom();
-        session.ghost.style.left = `${(sourceRect.left + session.lastPoint.left - session.startPoint.left) / zoom}px`;
-        session.ghost.style.top = `${(sourceRect.top + session.lastPoint.top - session.startPoint.top) / zoom}px`;
+        session.ghost.style.left = `${(session.lastPoint.left - session.ghostOffset.left) / zoom}px`;
+        session.ghost.style.top = `${(session.lastPoint.top - session.ghostOffset.top) / zoom}px`;
         session.ghost.style.width = `${sourceRect.width / zoom}px`;
       }
-      const dropTarget = resolveBlockDropTarget(
-        editor,
-        session.target,
-        session.lastPoint,
-      );
+      const dropTarget = isPointOverRect(session.lastPoint, sourceRect)
+        ? null
+        : resolveBlockDropTarget(editor, session.target, session.lastPoint);
       setPointerDropIndicator(
         dropTarget
           ? {
@@ -936,7 +970,10 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
       if (session.active) {
         event.preventDefault();
         event.stopPropagation();
-        if (editor.state.doc.eq(session.initialDoc)) {
+        if (
+          editor.state.doc.eq(session.initialDoc) &&
+          !isPointOverRect(session.lastPoint, getTargetRect(session.target))
+        ) {
           moveBlockAtPoint(editor, session.target, session.lastPoint);
         }
       }
@@ -1049,11 +1086,12 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
           content: [{ type: "paragraph" }],
         }
       : { type: "paragraph" };
-    const selectionPosition = target.pos + (isListItem ? 2 : 1);
+    const insertPosition = target.pos + target.node.nodeSize;
+    const selectionPosition = insertPosition + (isListItem ? 2 : 1);
     const inserted = editor
       .chain()
       .focus()
-      .insertContentAt(target.pos, content)
+      .insertContentAt(insertPosition, content)
       .setTextSelection(selectionPosition)
       .run();
 
