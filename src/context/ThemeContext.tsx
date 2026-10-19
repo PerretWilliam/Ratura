@@ -153,6 +153,8 @@ interface ThemeContextType {
   resetAllCustomColors: (mode: "light" | "dark") => void;
   pasteMode: PasteMode;
   setPasteMode: (mode: PasteMode) => void;
+  customCss: string;
+  setCustomCss: (css: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -236,6 +238,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [customColorsLight, setCustomColorsLightState] = useState<CustomColors>({});
   const [customColorsDark, setCustomColorsDarkState] = useState<CustomColors>({});
   const [pasteMode, setPasteModeState] = useState<PasteMode>("markdown");
+  const [customCss, setCustomCssState] = useState("");
+  const customCssSaveTimer = useRef<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const titleBarNoteInfoVisibilityRef = useRef<TitleBarNoteInfoVisibility>(
     DEFAULT_TITLE_BAR_NOTE_INFO_VISIBILITY,
@@ -328,6 +332,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       if (settings.customColorsDark) {
         setCustomColorsDarkState(settings.customColorsDark);
       }
+      setCustomCssState(settings.customCss ?? "");
       if (
         settings.pasteMode === "markdown" ||
         settings.pasteMode === "plain" ||
@@ -770,6 +775,38 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, []);
 
+  // User stylesheet, injected last so it overrides the app styles
+  useEffect(() => {
+    let style = document.getElementById("ratura-custom-css");
+    if (!customCss.trim()) {
+      style?.remove();
+      return;
+    }
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "ratura-custom-css";
+      document.head.appendChild(style);
+    }
+    style.textContent = customCss;
+  }, [customCss]);
+
+  // Applies live; persistence is debounced while typing
+  const setCustomCss = useCallback((css: string) => {
+    setCustomCssState(css);
+    if (customCssSaveTimer.current !== null) {
+      window.clearTimeout(customCssSaveTimer.current);
+    }
+    customCssSaveTimer.current = window.setTimeout(() => {
+      customCssSaveTimer.current = null;
+      updateGlobalSettings({ customCss: css.trim() ? css : null }).catch(
+        (error) => {
+          console.error("Failed to save custom CSS:", error);
+          toast.error("Custom CSS could not be saved");
+        },
+      );
+    }, 300);
+  }, []);
+
   // Live CSS variable update during drag (no persistence)
   const setEditorMaxWidthLive = useCallback((value: string) => {
     document.documentElement.style.setProperty("--editor-max-width", value);
@@ -822,6 +859,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       resetAllCustomColors,
       pasteMode,
       setPasteMode,
+      customCss,
+      setCustomCss,
     }),
     [
       theme,
@@ -863,6 +902,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       resetAllCustomColors,
       pasteMode,
       setPasteMode,
+      customCss,
+      setCustomCss,
     ],
   );
 

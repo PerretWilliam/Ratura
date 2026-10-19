@@ -618,6 +618,8 @@ pub struct Settings {
     pub custom_colors_light: Option<std::collections::HashMap<String, String>>,
     #[serde(rename = "customColorsDark")]
     pub custom_colors_dark: Option<std::collections::HashMap<String, String>>,
+    #[serde(rename = "customCss")]
+    pub custom_css: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -657,6 +659,8 @@ pub struct GlobalSettings {
     pub custom_colors_light: Option<HashMap<String, String>>,
     #[serde(rename = "customColorsDark")]
     pub custom_colors_dark: Option<HashMap<String, String>>,
+    #[serde(rename = "customCss")]
+    pub custom_css: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -698,6 +702,7 @@ fn split_settings(settings: Settings) -> (GlobalSettings, WorkspaceSettings) {
         ignored_patterns,
         custom_colors_light,
         custom_colors_dark,
+        custom_css,
     } = settings;
 
     (
@@ -720,6 +725,7 @@ fn split_settings(settings: Settings) -> (GlobalSettings, WorkspaceSettings) {
             ollama_model,
             custom_colors_light,
             custom_colors_dark,
+            custom_css,
         },
         WorkspaceSettings {
             git_enabled,
@@ -756,6 +762,7 @@ fn merge_settings(global: &GlobalSettings, workspace: &WorkspaceSettings) -> Set
         ignored_patterns: workspace.ignored_patterns.clone(),
         custom_colors_light: global.custom_colors_light.clone(),
         custom_colors_dark: global.custom_colors_dark.clone(),
+        custom_css: global.custom_css.clone(),
     }
 }
 
@@ -6893,6 +6900,23 @@ mod settings_tests {
         split_settings, AppConfig, GlobalSettings, Settings, SettingsChangeScope,
         SettingsChangeTargets, SettingsChangedPayload, WorkspaceBindings, WorkspaceSettings,
     };
+
+    #[test]
+    fn custom_css_round_trips_and_clears_through_global_settings() {
+        let (global, workspace) = split_settings(Settings::default());
+        let patched = apply_settings_patch(
+            &global,
+            serde_json::json!({ "customCss": ".prose { color: red; }" }),
+        )
+        .expect("patch should apply");
+        assert_eq!(
+            merge_settings(&patched, &workspace).custom_css.as_deref(),
+            Some(".prose { color: red; }")
+        );
+        let cleared = apply_settings_patch(&patched, serde_json::json!({ "customCss": null }))
+            .expect("patch should apply");
+        assert_eq!(cleared.custom_css, None);
+    }
 
     #[test]
     fn paste_mode_round_trips_through_global_settings() {

@@ -44,6 +44,7 @@ import {
   type TablePointerDrop,
 } from "./tablePointerDrag";
 import {
+  isNearTable,
   resolveTableProximityTarget,
   type TableProximityTarget,
 } from "./tableProximity";
@@ -362,9 +363,13 @@ function findTableAtPointer(
   currentLayout: TableLayout | null,
 ): { layout: TableLayout; target: TableProximityTarget } | null {
   const selectedContext = getTableSelectionContext(editor);
+  // Per-row measuring is costly and runs on every scroll frame: only measure
+  // tables whose outer rect is within reach of the pointer.
+  const near = (table: HTMLTableElement) =>
+    isNearTable(table.getBoundingClientRect(), point);
   if (currentLayout) {
     const currentElement = findTableElement(editor, currentLayout.tablePos);
-    const refreshedLayout = currentElement
+    const refreshedLayout = currentElement && near(currentElement)
       ? measureTableElement(editor, currentElement, selectedContext)
       : null;
     const currentTarget = refreshedLayout
@@ -382,6 +387,7 @@ function findTableAtPointer(
   for (const tableElement of Array.from(
     editor.view.dom.querySelectorAll<HTMLTableElement>("table"),
   )) {
+    if (!near(tableElement)) continue;
     const candidateLayout = measureTableElement(
       editor,
       tableElement,

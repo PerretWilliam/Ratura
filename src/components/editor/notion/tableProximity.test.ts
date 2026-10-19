@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTableProximityTarget } from "./tableProximity";
+import { isNearTable, resolveTableProximityTarget } from "./tableProximity";
 
 const rect = (left: number, top: number, width: number, height: number) => ({
   left,
@@ -70,5 +70,16 @@ describe("table control proximity", () => {
       .toBeNull();
     expect(resolveTableProximityTarget(layout, { left: 250, top: 300 }))
       .toBeNull();
+  });
+});
+
+describe("isNearTable", () => {
+  const rect = { left: 100, top: 100, right: 300, bottom: 200, width: 200, height: 100 };
+
+  it("includes the control margin and excludes far points", () => {
+    expect(isNearTable(rect, { left: 60, top: 60 })).toBe(true);
+    expect(isNearTable(rect, { left: 200, top: 240 })).toBe(true);
+    expect(isNearTable(rect, { left: 200, top: 260 })).toBe(false);
+    expect(isNearTable(rect, { left: 40, top: 150 })).toBe(false);
   });
 });
