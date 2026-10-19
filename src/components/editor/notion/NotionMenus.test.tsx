@@ -972,15 +972,15 @@ describe("block drag handle layout", () => {
       const bulletList = editor.state.doc.child(0);
       expect(bulletList.childCount).toBe(2);
       expect(bulletList.child(0).type.name).toBe("listItem");
-      expect(bulletList.child(0).child(0).type.name).toBe("paragraph");
-      expect(bulletList.child(0).textContent).toBe("");
-      expect(bulletList.child(1).textContent).toBe("List item");
+      expect(bulletList.child(1).child(0).type.name).toBe("paragraph");
+      expect(bulletList.child(0).textContent).toBe("List item");
+      expect(bulletList.child(1).textContent).toBe("");
       expect(editor.state.selection.$from.parent.type.name).toBe("paragraph");
       expect(editor.state.selection.$from.parent.textContent).toBe("");
       const listItems = editor.view.dom.querySelectorAll("ul > li");
       expect(listItems).toHaveLength(2);
       expect(
-        listItems[0]?.querySelector("p > br.ProseMirror-trailingBreak"),
+        listItems[1]?.querySelector("p > br.ProseMirror-trailingBreak"),
       ).not.toBeNull();
     } finally {
       await act(async () => {
@@ -990,7 +990,7 @@ describe("block drag handle layout", () => {
     }
   });
 
-  it("adds an empty paragraph before a normal text block", async () => {
+  it("adds an empty paragraph after a normal text block", async () => {
     const editor = new Editor({
       extensions: [StarterKit],
       content: "<p>Existing body</p>",
@@ -1034,7 +1034,7 @@ describe("block drag handle layout", () => {
           { length: editor.state.doc.childCount },
           (_, index) => editor.state.doc.child(index).textContent,
         ),
-      ).toEqual(["", "Existing body"]);
+      ).toEqual(["Existing body", ""]);
       expect(editor.state.selection.$from.parent.type.name).toBe("paragraph");
       expect(editor.state.selection.$from.parent.textContent).toBe("");
     } finally {

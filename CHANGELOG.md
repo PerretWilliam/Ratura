@@ -4,6 +4,16 @@ All notable changes to Ratura are documented here. The format follows [Keep a Ch
 
 Each release's notes on GitHub are taken from its section below, so add a section for the new version before bumping it.
 
+## [1.2.2] - 2026-10-19
+
+### Changed
+- The + next to the block grip adds the new block below instead of above.
+- Releasing a dragged block over itself leaves it in place, so a drag can be cancelled.
+
+### Fixed
+- The drag preview fits the block instead of leaving a large gap under it.
+- The block outline no longer stays on screen when you scroll with the pointer on the grip.
+
 ## [1.2.1] - 2026-10-19
 
 ### Changed
