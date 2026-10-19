@@ -4,6 +4,18 @@ All notable changes to Ratura are documented here. The format follows [Keep a Ch
 
 Each release's notes on GitHub are taken from its section below, so add a section for the new version before bumping it.
 
+## [1.2.0] - 2026-10-19
+
+### Added
+- Language picker in Settings → General, with flags and how complete each translation is. Ratura is available in English, French, German, Spanish, Italian, Brazilian Portuguese, Dutch, Polish, Turkish, Russian, Ukrainian and Japanese; "System" follows the OS language.
+- Rename notes from the title above the note or with Rename in the note menus.
+
+### Changed
+- A note's name is now its file name instead of its first line, and editing the first line no longer renames the file. New notes start empty and imported files keep their name.
+
+### Fixed
+- Creating or duplicating a note whose name was already taken could retry the same file forever.
+
 ## [1.1.0] - 2026-10-19
 
 ### Added

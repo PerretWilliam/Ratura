@@ -5,14 +5,12 @@ import es from "./locales/es";
 import fr from "./locales/fr";
 import it from "./locales/it";
 import ja from "./locales/ja";
-import ko from "./locales/ko";
 import nl from "./locales/nl";
 import pl from "./locales/pl";
 import ptBR from "./locales/pt-BR";
 import ru from "./locales/ru";
 import tr from "./locales/tr";
 import uk from "./locales/uk";
-import zhCN from "./locales/zh-CN";
 
 export type { Message };
 /** English source strings mapped to their translation; missing ones fall back to English. */
@@ -32,8 +30,6 @@ export const LANGUAGES = [
   { code: "ru", name: "Русский", flag: "🇷🇺" },
   { code: "uk", name: "Українська", flag: "🇺🇦" },
   { code: "ja", name: "日本語", flag: "🇯🇵" },
-  { code: "ko", name: "한국어", flag: "🇰🇷" },
-  { code: "zh-CN", name: "简体中文", flag: "🇨🇳" },
 ] as const;
 
 export type LanguageCode = (typeof LANGUAGES)[number]["code"];
@@ -51,8 +47,6 @@ const TRANSLATIONS: Record<LanguageCode, Translations> = {
   ru,
   uk,
   ja,
-  ko,
-  "zh-CN": zhCN,
 };
 
 /** "system" (or anything unknown) follows the OS languages, then English. */
