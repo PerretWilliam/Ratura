@@ -4,6 +4,14 @@ All notable changes to Ratura are documented here. The format follows [Keep a Ch
 
 Each release's notes on GitHub are taken from its section below, so add a section for the new version before bumping it.
 
+## [1.1.0] - 2026-10-19
+
+### Added
+- Custom CSS in Settings → Appearance, applied live on top of the app styles to make your own theme.
+
+### Fixed
+- Scrolling stuttered on long notes with large tables (for example full of math): table controls no longer measure every table on each scroll frame.
+
 ## [1.0.1] - 2026-10-18
 
 ### Added
