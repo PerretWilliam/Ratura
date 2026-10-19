@@ -1500,7 +1500,7 @@ export function TableControls({ editor }: { editor: Editor }) {
             }
           }}
         >
-          {t("Tx")}
+          Tx
         </ActionButton>
         <ActionButton
           label={t("Add row above")}
@@ -1601,7 +1601,7 @@ export function TableControls({ editor }: { editor: Editor }) {
             }
           }}
         >
-          {t("Tx")}
+          Tx
         </ActionButton>
         <ActionButton
           label={t("Add column before")}

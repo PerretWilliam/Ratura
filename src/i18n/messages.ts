@@ -588,7 +588,6 @@ export const MESSAGES = [
   "Track changes and store backups of your notes using Git",
   "Tracking",
   "Translations are community-made and may be incomplete",
-  "Tx",
   "Typography",
   "Underline",
   "Uninstalling...",
