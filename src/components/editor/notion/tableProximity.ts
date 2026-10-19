@@ -20,9 +20,29 @@ const STRUCTURAL_INNER_PROXIMITY = 10;
 const RESIZE_PROXIMITY = 4;
 const ADD_CONTROL_MIN_OFFSET = 5;
 const ADD_CONTROL_MAX_OFFSET = 24;
+// Farthest any target reaches outside the table rect (the "table" handle).
+const TABLE_CONTROL_REACH = 48;
 
 function between(value: number, minimum: number, maximum: number): boolean {
   return value >= minimum && value <= maximum;
+}
+
+export function isNearTable(
+  tableRect: TableDragRect,
+  point: TablePointerPoint,
+): boolean {
+  return (
+    between(
+      point.left,
+      tableRect.left - TABLE_CONTROL_REACH,
+      tableRect.right + TABLE_CONTROL_REACH,
+    ) &&
+    between(
+      point.top,
+      tableRect.top - TABLE_CONTROL_REACH,
+      tableRect.bottom + TABLE_CONTROL_REACH,
+    )
+  );
 }
 
 export function resolveTableProximityTarget(
