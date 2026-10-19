@@ -1,5 +1,5 @@
 import { useTheme, defaultThemeColors } from "../../context/ThemeContext";
-import { Button, CodeCopyButton, IconButton, Input, Select } from "../ui";
+import { Button, CodeCopyButton, IconButton, Input, Select, Textarea } from "../ui";
 import { ColorPicker } from "../ui/ColorPicker";
 import type {
   FontFamily,
@@ -254,6 +254,8 @@ export function AppearanceSettingsSection() {
     resetAllCustomColors,
     pasteMode,
     setPasteMode,
+    customCss,
+    setCustomCss,
   } = useTheme();
 
   // Validated numeric change handler
@@ -713,6 +715,40 @@ export function AppearanceSettingsSection() {
           {/* Fade overlay - content to muted background */}
           <div className="absolute bottom-0 left-0 right-0 h-40 bg-linear-to-t from-bg to-transparent pointer-events-none" />
         </div>
+      </section>
+
+      {/* Divider */}
+      <div className="border-t border-border border-dashed" />
+
+      {/* Custom CSS Section */}
+      <section className="pb-2">
+        <h2 className="text-xl font-medium mb-1">Custom CSS</h2>
+        <p className="text-sm text-text-muted mb-3">
+          Applied on top of the app styles. Theme colors are CSS variables
+          such as <code>--color-bg</code> or <code>--color-accent</code>; use{" "}
+          <code>!important</code> to override them.
+        </p>
+        <Textarea
+          value={customCss}
+          onChange={(e) => setCustomCss(e.target.value)}
+          placeholder={
+            ":root {\n  --color-bg: #1e1e2e !important;\n  --color-accent: #cba6f7 !important;\n}\n\n.prose h1 {\n  letter-spacing: -0.02em;\n}"
+          }
+          rows={10}
+          spellCheck={false}
+          aria-label="Custom CSS"
+          className="font-mono text-xs resize-y"
+        />
+        {customCss && (
+          <Button
+            onClick={() => setCustomCss("")}
+            variant="ghost"
+            size="sm"
+            className="mt-2"
+          >
+            Clear custom CSS
+          </Button>
+        )}
       </section>
 
       {/* Divider */}

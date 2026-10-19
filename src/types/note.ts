@@ -91,6 +91,7 @@ export interface Settings {
   ignoredPatterns?: string[];
   customColorsLight?: CustomColors;
   customColorsDark?: CustomColors;
+  customCss?: string;
   pasteMode?: PasteMode;
 }
 
