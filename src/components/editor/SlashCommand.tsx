@@ -24,6 +24,7 @@ import {
   WorkflowIcon,
 } from "../icons";
 import { ALERT_TYPES, ALERT_META, type AlertType } from "./AlertBlockquote";
+import { t as tNow } from "../../i18n";
 
 const ALERT_ALIASES: Record<AlertType, string[]> = {
   NOTE: ["note", "info"],
@@ -42,10 +43,11 @@ export interface SlashCommandItem {
   command: (editor: TiptapEditor) => void;
 }
 
-const SLASH_COMMANDS: SlashCommandItem[] = [
+// Built per query so titles follow the current language
+const slashCommands = (): SlashCommandItem[] => [
   {
-    title: "Text",
-    description: "Plain body text",
+    title: tNow("Text"),
+    description: tNow("Plain body text"),
     icon: <PilcrowIcon />,
     aliases: ["paragraph", "body", "plain", "normal"],
     command: (editor) => {
@@ -53,8 +55,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Heading 1",
-    description: "Large section heading",
+    title: tNow("Heading 1"),
+    description: tNow("Large section heading"),
     icon: <Heading1Icon />,
     aliases: ["h1", "heading", "title"],
     command: (editor) => {
@@ -62,8 +64,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Heading 2",
-    description: "Medium section heading",
+    title: tNow("Heading 2"),
+    description: tNow("Medium section heading"),
     icon: <Heading2Icon />,
     aliases: ["h2", "heading", "subtitle"],
     command: (editor) => {
@@ -71,8 +73,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Heading 3",
-    description: "Small section heading",
+    title: tNow("Heading 3"),
+    description: tNow("Small section heading"),
     icon: <Heading3Icon />,
     aliases: ["h3", "heading"],
     command: (editor) => {
@@ -80,8 +82,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Heading 4",
-    description: "Smallest section heading",
+    title: tNow("Heading 4"),
+    description: tNow("Smallest section heading"),
     icon: <Heading4Icon />,
     aliases: ["h4", "heading"],
     command: (editor) => {
@@ -89,8 +91,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Bullet List",
-    description: "Unordered list",
+    title: tNow("Bullet List"),
+    description: tNow("Unordered list"),
     icon: <ListIcon />,
     aliases: ["ul", "unordered", "list"],
     command: (editor) => {
@@ -98,8 +100,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Numbered List",
-    description: "Ordered list",
+    title: tNow("Numbered List"),
+    description: tNow("Ordered list"),
     icon: <ListOrderedIcon />,
     aliases: ["ol", "ordered", "list", "numbered"],
     command: (editor) => {
@@ -107,8 +109,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Task List",
-    description: "List with checkboxes",
+    title: tNow("Task List"),
+    description: tNow("List with checkboxes"),
     icon: <CheckSquareIcon />,
     aliases: ["todo", "checklist", "checkbox"],
     command: (editor) => {
@@ -116,8 +118,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Blockquote",
-    description: "Block quotation",
+    title: tNow("Blockquote"),
+    description: tNow("Block quotation"),
     icon: <QuoteIcon />,
     aliases: ["quote"],
     command: (editor) => {
@@ -127,8 +129,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
   ...ALERT_TYPES.map((type) => {
     const { label, color } = ALERT_META[type];
     return {
-      title: `Alert: ${label}`,
-      description: `${label} alert callout`,
+      title: tNow("Alert: {label}", { label: tNow(label) }),
+      description: tNow("{label} alert callout", { label: tNow(label) }),
       icon: (
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <QuoteIcon />
@@ -142,8 +144,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     };
   }),
   {
-    title: "Code Block",
-    description: "Fenced code block",
+    title: tNow("Code Block"),
+    description: tNow("Fenced code block"),
     icon: <CodeIcon />,
     aliases: ["code", "fenced", "pre"],
     command: (editor) => {
@@ -151,8 +153,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Mermaid Diagram",
-    description: "Mermaid diagram block",
+    title: tNow("Mermaid Diagram"),
+    description: tNow("Mermaid diagram block"),
     icon: <WorkflowIcon />,
     aliases: ["mermaid", "diagram", "flowchart", "chart"],
     command: (editor) => {
@@ -160,8 +162,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Block Math",
-    description: "Display math block",
+    title: tNow("Block Math"),
+    description: tNow("Display math block"),
     icon: <BlockMathIcon />,
     aliases: ["math", "equation"],
     command: (editor) => {
@@ -170,8 +172,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Inline Math",
-    description: "Inline math expression",
+    title: tNow("Inline Math"),
+    description: tNow("Inline math expression"),
     icon: <BlockMathIcon />,
     aliases: ["inline math", "latex"],
     command: (editor) => {
@@ -180,8 +182,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Horizontal Rule",
-    description: "Visual divider",
+    title: tNow("Horizontal Rule"),
+    description: tNow("Visual divider"),
     icon: <SeparatorIcon />,
     aliases: ["divider", "separator", "hr", "line"],
     command: (editor) => {
@@ -189,8 +191,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Image",
-    description: "Insert from file",
+    title: tNow("Image"),
+    description: tNow("Insert from file"),
     icon: <ImageIcon />,
     aliases: ["picture", "photo", "img"],
     command: (editor) => {
@@ -199,8 +201,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Table",
-    description: "Insert a 3×3 table",
+    title: tNow("Table"),
+    description: tNow("Insert a 3×3 table"),
     icon: <TableIcon />,
     aliases: ["grid"],
     command: (editor) => {
@@ -212,8 +214,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: "Wikilink",
-    description: "Link to another note",
+    title: tNow("Wikilink"),
+    description: tNow("Link to another note"),
     icon: <BracketsIcon />,
     aliases: ["link", "note", "wikilink", "[["],
     command: (editor) => {
@@ -244,7 +246,7 @@ export const SlashCommand = Extension.create({
 
         items: ({ query }) => {
           const q = query.toLowerCase();
-          return SLASH_COMMANDS.filter(
+          return slashCommands().filter(
             (item) =>
               item.title.toLowerCase().includes(q) ||
               item.description.toLowerCase().includes(q) ||

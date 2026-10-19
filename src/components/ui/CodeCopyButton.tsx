@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { CheckIcon, CopyIcon } from "../icons";
 import { cn } from "../../lib/utils";
+import { t as tNow } from "../../i18n";
 
 interface CodeCopyButtonProps {
   text: string;
@@ -15,14 +16,14 @@ export function CodeCopyButton({
   text,
   className,
   iconClassName = "w-3.5 h-3.5 stroke-[1.7]",
-  copyLabel = "Copy",
-  copiedLabel = "Copied",
+  copyLabel = tNow("Copy"),
+  copiedLabel = tNow("Copied"),
 }: CodeCopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const copyResetTimerRef = useRef<number | null>(null);
   const isDisabled = !text.trim();
-  const copyA11yLabel = copyLabel.trim() || "Copy code";
-  const copiedA11yLabel = copiedLabel.trim() || "Copied";
+  const copyA11yLabel = copyLabel.trim() || tNow("Copy code");
+  const copiedA11yLabel = copiedLabel.trim() || tNow("Copied");
 
   useEffect(() => {
     return () => {

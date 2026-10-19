@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useT } from "../../i18n";
 
 interface NoteTitleInputProps {
   noteId: string;
@@ -12,6 +13,7 @@ interface NoteTitleInputProps {
 // The note's name is its file name: editing it renames the file.
 export const NoteTitleInput = forwardRef<HTMLInputElement, NoteTitleInputProps>(
   function NoteTitleInput({ noteId, title, onRename, onExit }, ref) {
+    const t = useT();
     const [value, setValue] = useState(title);
     // Escape blurs synchronously, before the reverted value re-renders
     const cancelledRef = useRef(false);
@@ -50,8 +52,8 @@ export const NoteTitleInput = forwardRef<HTMLInputElement, NoteTitleInputProps>(
           }
         }}
         spellCheck={false}
-        aria-label="Note name"
-        placeholder="Untitled"
+        aria-label={t("Note name")}
+        placeholder={t("Untitled")}
         className="block w-full mx-auto px-6 pt-8 bg-transparent text-text text-3xl font-semibold leading-tight focus:outline-none placeholder:text-text-muted"
         style={{ maxWidth: "var(--editor-max-width, 48rem)" }}
       />

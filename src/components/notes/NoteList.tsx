@@ -33,6 +33,7 @@ import type {
 import { FileTypeIcon } from "./FileTypeIcon";
 import { orderNoteListItems } from "../../lib/folderTree";
 import { SETTINGS_CHANGED_DOM_EVENT } from "../../lib/settingsScope";
+import { useT } from "../../i18n";
 
 const menuItemClass =
   "px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2 rounded-sm";
@@ -166,6 +167,7 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
   onRename,
   onRefreshSettings,
 }: NoteItemWithMenuProps) {
+  const t = useT();
   const handlePin = useCallback(async () => {
     try {
       await (isPinned ? onUnpin(id) : onPin(id));
@@ -213,21 +215,21 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
             onSelect={() => onDuplicate(id)}
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-            Duplicate
+            {t("Duplicate")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
             onSelect={() => onRename(id, title)}
           >
             <PencilIcon className="w-4 h-4 stroke-[1.6]" />
-            Rename
+            {t("Rename")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
             onSelect={handleCopyFilepath}
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-            Copy Filepath
+            {t("Copy Filepath")}
           </ContextMenu.Item>
           <ContextMenu.Separator className={menuSeparatorClass} />
           <ContextMenu.Item
@@ -238,7 +240,7 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
             onSelect={() => onDelete(id)}
           >
             <TrashIcon className="w-4 h-4 stroke-[1.6]" />
-            Delete
+            {t("Delete")}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -259,6 +261,7 @@ const AttachmentItem = memo(function AttachmentItem({
   onSelect,
   showFolderPrefix = true,
 }: AttachmentItemProps) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const folder =
     showFolderPrefix && attachment.id.includes("/")
@@ -308,11 +311,11 @@ const AttachmentItem = memo(function AttachmentItem({
         <ContextMenu.Content className="min-w-44 bg-bg border border-border rounded-md shadow-lg py-1 z-50">
           <ContextMenu.Item className={menuItemClass} onSelect={handleCopyFilepath}>
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-            Copy Filepath
+            {t("Copy Filepath")}
           </ContextMenu.Item>
           <ContextMenu.Item className={menuItemClass} onSelect={handleReveal}>
             <ExternalLinkIcon className="w-4 h-4 stroke-[1.6]" />
-            Reveal in File Manager
+            {t("Reveal in File Manager")}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -335,6 +338,7 @@ export function NoteList({
   lastClickedNoteId,
   setLastClickedNoteId,
 }: NoteListProps) {
+  const t = useT();
   const {
     notes,
     attachments,
@@ -483,7 +487,7 @@ export function NoteList({
   if (isLoading && notes.length === 0) {
     return (
       <div className="p-4 text-center text-text-muted select-none">
-        Loading...
+        {t("Loading...")}
       </div>
     );
   }
@@ -491,7 +495,7 @@ export function NoteList({
   if (isSearching && sortedDisplayItems.length === 0 && displayAttachments.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-text-muted select-none">
-        No results found
+        {t("No results found")}
       </div>
     );
   }
@@ -499,7 +503,7 @@ export function NoteList({
   if (sortedDisplayItems.length === 0 && displayAttachments.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-text-muted select-none">
-        No notes yet
+        {t("No notes yet")}
       </div>
     );
   }
@@ -525,16 +529,15 @@ export function NoteList({
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete note?</AlertDialogTitle>
+              <AlertDialogTitle>{t("Delete note?")}</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the note and all its content. This
-                action cannot be undone.
+                {t("This will permanently delete the note and all its content. This action cannot be undone.")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteConfirm}>
-                Delete
+                {t("Delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -584,25 +587,24 @@ export function NoteList({
         open={noteToRename !== null}
         onOpenChange={(open) => !open && setNoteToRename(null)}
         onConfirm={handleRenameConfirm}
-        title="Rename Note"
-        description="Enter a new name for the note"
-        confirmLabel="Rename"
+        title={t("Rename Note")}
+        description={t("Enter a new name for the note")}
+        confirmLabel={t("Rename")}
         defaultValue={noteToRename?.name ?? ""}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete note?</AlertDialogTitle>
+            <AlertDialogTitle>{t("Delete note?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the note and all its content. This
-              action cannot be undone.
+              {t("This will permanently delete the note and all its content. This action cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm}>
-              Delete
+              {t("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

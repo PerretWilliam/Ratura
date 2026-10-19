@@ -51,10 +51,12 @@ import {
 import { getWindowMode } from "./lib/windowMode";
 import { shouldSyncMainFolderLocation } from "./lib/workspace";
 import { useWindowSessionPersistence } from "./lib/useWindowSessionPersistence";
+import { useT } from "./i18n";
 
 type ViewState = "notes" | "settings";
 
 function AppContent() {
+  const t = useT();
   const {
     notesFolder,
     isLoading,
@@ -94,7 +96,7 @@ function AppContent() {
   useEffect(() => {
     for (const notice of consumePendingRecoveryNotices()) {
       toast.warning(
-        `A draft that could not be saved was recovered to ${notice.recoveredTo}`,
+        t("A draft that could not be saved was recovered to {recoveredTo}", { recoveredTo: notice.recoveredTo }),
       );
     }
   }, []);
@@ -140,14 +142,14 @@ function AppContent() {
           closeInProgressRef.current = false;
           if (!disposed) {
             toast.error(
-              `Window kept open because the draft could not be saved: ${error}`,
+              t("Window kept open because the draft could not be saved: {error}", { error: String(error) }),
             );
           }
         });
       }),
       (error) => {
         if (!disposed) {
-          toast.error(`Safe window-close protection could not start: ${error}`);
+          toast.error(t("Safe window-close protection could not start: {error}", { error: String(error) }));
         }
       },
     ).then((removeListener) => {
@@ -202,7 +204,7 @@ function AppContent() {
       await flushCurrentDraft();
     } catch (error) {
       console.error("Failed to flush draft before opening Settings:", error);
-      toast.error("Settings could not be opened because the current draft could not be saved");
+      toast.error(t("Settings could not be opened because the current draft could not be saved"));
       return;
     }
     setView("settings");
@@ -214,7 +216,7 @@ function AppContent() {
         await flushCurrentDraft();
       } catch (error) {
         console.error("Failed to flush draft before opening Settings:", error);
-        toast.error("Settings could not be opened because the current draft could not be saved");
+        toast.error(t("Settings could not be opened because the current draft could not be saved"));
         return;
       }
     }
@@ -237,7 +239,7 @@ function AppContent() {
   const handleAiEdit = useCallback(
     async (prompt: string, ollamaModel?: string) => {
       if (!currentNote) {
-        toast.error("No note selected");
+        toast.error(t("No note selected"));
         return;
       }
 
@@ -279,8 +281,8 @@ function AppContent() {
         } else {
           toast.error(
             <div className="space-y-1">
-              <div className="font-medium">AI Edit Failed</div>
-              <div className="text-xs">{result.error || "Unknown error"}</div>
+              <div className="font-medium">{t("AI Edit Failed")}</div>
+              <div className="text-xs">{result.error || t("Unknown error")}</div>
             </div>,
             { duration: Infinity, closeButton: true },
           );
@@ -288,7 +290,7 @@ function AppContent() {
       } catch (error) {
         console.error("[AI] Error:", error);
         toast.error(
-          `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          t("Error: {error}", { error: error instanceof Error ? error.message : t("Unknown error") }),
         );
       } finally {
         setAiEditing(false);
@@ -551,7 +553,7 @@ function AppContent() {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: "Open Folder",
+      title: t("Open Folder"),
     });
 
     if (typeof selected === "string") {
@@ -568,7 +570,7 @@ function AppContent() {
         await openFolderInWorkspaceWindow();
       } catch (error) {
         console.error("Failed to open folder:", error);
-        if (!disposed) toast.error("Failed to open folder");
+        if (!disposed) toast.error(t("Failed to open folder"));
       }
     }).then((cleanup) => {
       if (disposed) cleanup();
@@ -590,7 +592,7 @@ function AppContent() {
       <div className="h-full min-h-0 flex items-center justify-center bg-bg-secondary">
         <div className="text-text-muted/70 text-sm flex items-center gap-1.5 font-medium">
           <SpinnerIcon className="w-4.5 h-4.5 stroke-[1.5] animate-spin" />
-          Initializing Ratura...
+          {t("Initializing Ratura...")}
         </div>
       </div>
     );
@@ -760,6 +762,7 @@ function UpdateToast({
   update: Update;
   toastId: string | number;
 }) {
+  const t = useT();
   const [installing, setInstalling] = useState(false);
 
   const handleUpdate = async () => {
@@ -767,15 +770,15 @@ function UpdateToast({
     try {
       await update.downloadAndInstall();
       toast.dismiss(toastId);
-      toast.success("Update installed", {
-        description: "Restart Ratura to use the new version.",
+      toast.success(t("Update installed"), {
+        description: t("Restart Ratura to use the new version."),
         duration: Infinity,
         closeButton: true,
-        action: { label: "Restart now", onClick: () => void relaunch() },
+        action: { label: t("Restart now"), onClick: () => void relaunch() },
       });
     } catch (err) {
       console.error("Update failed:", err);
-      toast.error("Update failed. Please try again later.");
+      toast.error(t("Update failed. Please try again later."));
       setInstalling(false);
     }
   };

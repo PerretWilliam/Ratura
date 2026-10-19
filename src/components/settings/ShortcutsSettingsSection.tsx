@@ -1,4 +1,5 @@
 import { shortcutCategories } from "../../lib/shortcuts";
+import { useT } from "../../i18n";
 
 // Render individual key as keyboard button
 function KeyboardKey({ keyLabel }: { keyLabel: string }) {
@@ -24,6 +25,7 @@ function ShortcutKeys({ keys }: { keys: string[] }) {
 const settingsCategories = ["Navigation", "Notes", "Editor", "Settings"];
 
 export function ShortcutsSettingsSection() {
+  const t = useT();
   return (
     <div className="space-y-8 pb-8">
       {settingsCategories.map((categoryName, idx) => {
@@ -39,7 +41,7 @@ export function ShortcutsSettingsSection() {
             )}
             <section>
               <h2 className="text-xl font-medium pt-8 mb-4">
-                {categoryName}
+                {t(category.title)}
               </h2>
               <div className="space-y-3">
                 {category.shortcuts.map((shortcut) => (
@@ -48,7 +50,7 @@ export function ShortcutsSettingsSection() {
                     className="flex items-center justify-between gap-4"
                   >
                     <span className="text-sm text-text font-medium">
-                      {shortcut.description}
+                      {t(shortcut.description)}
                     </span>
                     <ShortcutKeys keys={shortcut.keys} />
                   </div>

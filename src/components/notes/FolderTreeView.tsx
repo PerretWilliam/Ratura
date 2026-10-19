@@ -49,6 +49,7 @@ import type {
   NoteSortOrder,
   Settings,
 } from "../../types/note";
+import { useT } from "../../i18n";
 
 const STORAGE_KEY = "ratura:collapsedFolders";
 
@@ -106,6 +107,7 @@ const FileItem = memo(function FileItem({
   onMoveToParent,
   focusedItemKey,
 }: FileItemProps) {
+  const t = useT();
   const itemRef = useRef<HTMLDivElement>(null);
   const handleClick = useCallback(
     (e: React.MouseEvent) => onNoteClick(note.id, e),
@@ -207,26 +209,26 @@ const FileItem = memo(function FileItem({
             className={menuItemClass}
             onSelect={() =>
               void onDuplicate(note.id).catch((err) =>
-                toast.error(`Failed to duplicate: ${err?.message || err}`),
+                toast.error(t("Failed to duplicate: {err}", { err: err?.message || err })),
               )
             }
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-            Duplicate
+            {t("Duplicate")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
             onSelect={() => onRename(note.id, note.title)}
           >
             <PencilIcon className="w-4 h-4 stroke-[1.6]" />
-            Rename
+            {t("Rename")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
             onSelect={handleCopyFilepath}
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-            Copy Filepath
+            {t("Copy Filepath")}
           </ContextMenu.Item>
           {noteParentFolder && onMoveToParent && (
             <>
@@ -243,12 +245,12 @@ const FileItem = memo(function FileItem({
                   void Promise.resolve(
                     onMoveToParent(note.id, parentOfParent),
                   ).catch((err) =>
-                    toast.error(`Failed to move: ${err?.message || err}`),
+                    toast.error(t("Failed to move: {err}", { err: err?.message || err })),
                   );
                 }}
               >
                 <ArrowUpIcon className="w-4 h-4 stroke-[1.6]" />
-                Move to Parent Folder
+                {t("Move to Parent Folder")}
               </ContextMenu.Item>
             </>
           )}
@@ -261,7 +263,7 @@ const FileItem = memo(function FileItem({
             onSelect={() => onDelete(note.id)}
           >
             <TrashIcon className="w-4 h-4 stroke-[1.6]" />
-            Delete
+            {t("Delete")}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -284,6 +286,7 @@ const AttachmentFileItem = memo(function AttachmentFileItem({
   onAttachmentClick,
   focusedItemKey,
 }: AttachmentFileItemProps) {
+  const t = useT();
   const itemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -331,11 +334,11 @@ const AttachmentFileItem = memo(function AttachmentFileItem({
         <ContextMenu.Content className="min-w-44 bg-bg border border-border rounded-md shadow-lg py-1 z-50">
           <ContextMenu.Item className={menuItemClass} onSelect={handleCopyFilepath}>
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-            Copy Filepath
+            {t("Copy Filepath")}
           </ContextMenu.Item>
           <ContextMenu.Item className={menuItemClass} onSelect={handleReveal}>
             <ExternalLinkIcon className="w-4 h-4 stroke-[1.6]" />
-            Reveal in File Manager
+            {t("Reveal in File Manager")}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -392,6 +395,7 @@ export const FolderItemComponent = memo(function FolderItem({
   onMoveNoteToParent,
   onMoveFolderToParent,
 }: FolderItemProps) {
+  const t = useT();
   const isCollapsed = collapsedFolders.has(folder.path);
   const noteCount = countNotesInFolder(folder);
   const isEmpty = noteCount === 0 && folder.children.length === 0;
@@ -511,7 +515,7 @@ export const FolderItemComponent = memo(function FolderItem({
                   className="text-sm text-text-muted/50 py-1 select-none"
                   style={{ paddingLeft: `${(depth + 1) * 12 + 24}px` }}
                 >
-                  Empty
+                  {t("Empty")}
                 </div>
               )}
             </div>
@@ -525,14 +529,14 @@ export const FolderItemComponent = memo(function FolderItem({
             onSelect={() => onCreateNoteHere(folder.path)}
           >
             <AddNoteIcon className="w-4 h-4 stroke-[1.6]" />
-            New Note
+            {t("New Note")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
             onSelect={() => onNewSubfolder(folder.path)}
           >
             <FolderPlusIcon className="w-4 h-4 stroke-[1.6]" />
-            New Subfolder
+            {t("New Subfolder")}
           </ContextMenu.Item>
           <ContextMenu.Separator className={menuSeparatorClass} />
           <ContextMenu.Item
@@ -543,7 +547,7 @@ export const FolderItemComponent = memo(function FolderItem({
             }}
           >
             <PencilIcon className="w-4 h-4 stroke-[1.6]" />
-            Rename
+            {t("Rename")}
           </ContextMenu.Item>
           {folder.path.includes("/") && (
             <>
@@ -563,12 +567,12 @@ export const FolderItemComponent = memo(function FolderItem({
                   void Promise.resolve(
                     onMoveFolderToParent(folder.path, grandparent),
                   ).catch((err) =>
-                    toast.error(`Failed to move: ${err?.message || err}`),
+                    toast.error(t("Failed to move: {err}", { err: err?.message || err })),
                   );
                 }}
               >
                 <ArrowUpIcon className="w-4 h-4 stroke-[1.6]" />
-                Move to Parent Folder
+                {t("Move to Parent Folder")}
               </ContextMenu.Item>
             </>
           )}
@@ -581,7 +585,7 @@ export const FolderItemComponent = memo(function FolderItem({
             onSelect={() => onDeleteFolder(folder.path)}
           >
             <TrashIcon className="w-4 h-4 stroke-[1.6]" />
-            Delete Folder
+            {t("Delete Folder")}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -608,6 +612,7 @@ export function FolderTreeView({
   lastClickedNoteId,
   setLastClickedNoteId,
 }: FolderTreeViewProps) {
+  const t = useT();
   const {
     notes,
     attachments,
@@ -738,7 +743,7 @@ export function FolderTreeView({
         setDeleteDialogOpen(false);
       } catch (error) {
         console.error("Failed to delete folder:", error);
-        toast.error("Failed to delete folder");
+        toast.error(t("Failed to delete folder"));
       } finally {
         setIsDeleting(false);
       }
@@ -759,7 +764,7 @@ export function FolderTreeView({
         setNoteDeleteDialogOpen(false);
       } catch (error) {
         console.error("Failed to delete note:", error);
-        toast.error("Failed to delete note");
+        toast.error(t("Failed to delete note"));
       } finally {
         setIsDeleting(false);
       }
@@ -792,7 +797,7 @@ export function FolderTreeView({
           setRenameDialogOpen(false);
         } catch (error) {
           console.error("Failed to rename folder:", error);
-          toast.error("Failed to rename folder");
+          toast.error(t("Failed to rename folder"));
         }
       }
     },
@@ -807,7 +812,7 @@ export function FolderTreeView({
         setSubfolderDialogOpen(false);
       } catch (error) {
         console.error("Failed to create subfolder:", error);
-        toast.error("Failed to create subfolder");
+        toast.error(t("Failed to create subfolder"));
       }
     },
     [subfolderParent, createFolder, expandFolder],
@@ -1125,14 +1130,13 @@ export function FolderTreeView({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete folder?</AlertDialogTitle>
+            <AlertDialogTitle>{t("Delete folder?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the folder and all notes inside it.
-              This action cannot be undone.
+              {t("This will permanently delete the folder and all notes inside it. This action cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeleting}
               onClick={(e) => {
@@ -1151,9 +1155,9 @@ export function FolderTreeView({
         open={noteToRename !== null}
         onOpenChange={(open) => !open && setNoteToRename(null)}
         onConfirm={handleRenameNoteConfirm}
-        title="Rename Note"
-        description="Enter a new name for the note"
-        confirmLabel="Rename"
+        title={t("Rename Note")}
+        description={t("Enter a new name for the note")}
+        confirmLabel={t("Rename")}
         defaultValue={noteToRename?.name ?? ""}
       />
 
@@ -1162,9 +1166,9 @@ export function FolderTreeView({
         open={renameDialogOpen}
         onOpenChange={setRenameDialogOpen}
         onConfirm={handleRenameConfirm}
-        title="Rename Folder"
-        description="Enter a new name for the folder"
-        confirmLabel="Rename"
+        title={t("Rename Folder")}
+        description={t("Enter a new name for the folder")}
+        confirmLabel={t("Rename")}
         defaultValue={renameDefaultValue}
       />
 
@@ -1173,9 +1177,9 @@ export function FolderTreeView({
         open={subfolderDialogOpen}
         onOpenChange={setSubfolderDialogOpen}
         onConfirm={handleSubfolderConfirm}
-        title="Create new subfolder"
-        description="Enter a name for your new subfolder"
-        confirmLabel="Create"
+        title={t("Create new subfolder")}
+        description={t("Enter a name for your new subfolder")}
+        confirmLabel={t("Create")}
       />
 
       {/* Delete note confirmation dialog */}
@@ -1185,14 +1189,13 @@ export function FolderTreeView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete note?</AlertDialogTitle>
+            <AlertDialogTitle>{t("Delete note?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the note and all its content. This
-              action cannot be undone.
+              {t("This will permanently delete the note and all its content. This action cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeleting}
               onClick={(e) => {

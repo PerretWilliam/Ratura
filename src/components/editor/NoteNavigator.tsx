@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cleanTitle, cn } from "../../lib/utils";
 import type { NoteMetadata } from "../../types/note";
+import { useT } from "../../i18n";
 
 interface NoteNavigatorProps {
   notes: NoteMetadata[];
@@ -13,6 +14,7 @@ export const NoteNavigator = ({
   onSelect,
   onCancel,
 }: NoteNavigatorProps) => {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +74,7 @@ export const NoteNavigator = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Go to note..."
+          placeholder={t("Go to note...")}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -86,7 +88,7 @@ export const NoteNavigator = ({
       >
         {filtered.length === 0 ? (
           <div className="text-sm text-text-muted px-3 py-2">
-            No matching notes
+            {t("No matching notes")}
           </div>
         ) : (
           filtered.map((note, i) => (

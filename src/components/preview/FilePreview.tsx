@@ -14,6 +14,7 @@ import {
   RefreshCwIcon,
   SpinnerIcon,
 } from "../icons";
+import { useT } from "../../i18n";
 
 interface FilePreviewProps {
   attachment: AttachmentMetadata;
@@ -43,6 +44,7 @@ export function FilePreview({
   onToggleSidebar,
   sidebarVisible,
 }: FilePreviewProps) {
+  const t = useT();
   const [textContent, setTextContent] = useState<string | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -64,7 +66,7 @@ export function FilePreview({
     } catch (error) {
       if (id !== loadIdRef.current) return;
       console.error("Failed to read text file:", error);
-      toast.error("Failed to read file. Please try again.");
+      toast.error(t("Failed to read file. Please try again."));
       setTextContent("");
     } finally {
       if (id === loadIdRef.current) setIsLoadingText(false);
@@ -86,9 +88,9 @@ export function FilePreview({
   const handleCopyPath = useCallback(async () => {
     try {
       await invoke("copy_to_clipboard", { text: attachment.path });
-      toast.success("Copied filepath");
+      toast.success(t("Copied filepath"));
     } catch {
-      toast.error("Failed to copy filepath");
+      toast.error(t("Failed to copy filepath"));
     }
   }, [attachment.path]);
 
@@ -96,7 +98,7 @@ export function FilePreview({
     try {
       await invoke("open_in_file_manager", { path: attachment.path });
     } catch {
-      toast.error("Failed to reveal file");
+      toast.error(t("Failed to reveal file"));
     }
   }, [attachment.path]);
 
@@ -123,13 +125,13 @@ export function FilePreview({
           </div>
         </div>
         <div className="flex items-center gap-px">
-          <IconButton onClick={handleReload} title="Reload Preview">
+          <IconButton onClick={handleReload} title={t("Reload Preview")}>
             <RefreshCwIcon className="w-4.25 h-4.25 stroke-[1.5]" />
           </IconButton>
-          <IconButton onClick={handleCopyPath} title="Copy Filepath">
+          <IconButton onClick={handleCopyPath} title={t("Copy Filepath")}>
             <CopyIcon className="w-4.25 h-4.25 stroke-[1.5]" />
           </IconButton>
-          <IconButton onClick={handleReveal} title="Reveal in File Manager">
+          <IconButton onClick={handleReveal} title={t("Reveal in File Manager")}>
             <ExternalLinkIcon className="w-4.25 h-4.25 stroke-[1.5]" />
           </IconButton>
         </div>
@@ -141,9 +143,9 @@ export function FilePreview({
             {imageError ? (
               <div className="flex flex-col items-center justify-center gap-3 text-text-muted">
                 <ImageIcon className="w-9 h-9 stroke-[1.4]" />
-                <p className="text-sm">Failed to load image.</p>
+                <p className="text-sm">{t("Failed to load image.")}</p>
                 <Button onClick={handleReveal} variant="secondary" size="sm">
-                  Reveal File
+                  {t("Reveal File")}
                 </Button>
               </div>
             ) : (
@@ -168,10 +170,10 @@ export function FilePreview({
             <div className="h-full flex flex-col items-center justify-center gap-3 text-text-muted">
               <NoteIcon className="w-9 h-9 stroke-[1.4]" />
               <p className="text-sm">
-                PDF preview is not available in this WebView.
+                {t("PDF preview is not available in this WebView.")}
               </p>
               <Button onClick={handleReveal} variant="secondary" size="sm">
-                Reveal File
+                {t("Reveal File")}
               </Button>
             </div>
           </object>
@@ -195,10 +197,10 @@ export function FilePreview({
           <div className="h-full flex flex-col items-center justify-center gap-3 text-text-muted">
             <FileIcon className="w-9 h-9 stroke-[1.4]" />
             <p className="text-sm">
-              No preview is available for this file type.
+              {t("No preview is available for this file type.")}
             </p>
             <Button onClick={handleReveal} variant="secondary" size="sm">
-              Reveal File
+              {t("Reveal File")}
             </Button>
           </div>
         )}

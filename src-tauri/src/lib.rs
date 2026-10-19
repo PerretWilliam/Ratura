@@ -620,6 +620,7 @@ pub struct Settings {
     pub custom_colors_dark: Option<std::collections::HashMap<String, String>>,
     #[serde(rename = "customCss")]
     pub custom_css: Option<String>,
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -661,6 +662,7 @@ pub struct GlobalSettings {
     pub custom_colors_dark: Option<HashMap<String, String>>,
     #[serde(rename = "customCss")]
     pub custom_css: Option<String>,
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -703,6 +705,7 @@ fn split_settings(settings: Settings) -> (GlobalSettings, WorkspaceSettings) {
         custom_colors_light,
         custom_colors_dark,
         custom_css,
+        language,
     } = settings;
 
     (
@@ -726,6 +729,7 @@ fn split_settings(settings: Settings) -> (GlobalSettings, WorkspaceSettings) {
             custom_colors_light,
             custom_colors_dark,
             custom_css,
+            language,
         },
         WorkspaceSettings {
             git_enabled,
@@ -763,6 +767,7 @@ fn merge_settings(global: &GlobalSettings, workspace: &WorkspaceSettings) -> Set
         custom_colors_light: global.custom_colors_light.clone(),
         custom_colors_dark: global.custom_colors_dark.clone(),
         custom_css: global.custom_css.clone(),
+        language: global.language.clone(),
     }
 }
 

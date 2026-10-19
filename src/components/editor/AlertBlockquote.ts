@@ -1,4 +1,5 @@
 import { Node, mergeAttributes, InputRule, type JSONContent, type MarkdownToken } from "@tiptap/core";
+import { msg, t as tNow, type Message } from "../../i18n";
 
 export type AlertType = "NOTE" | "TIP" | "IMPORTANT" | "WARNING" | "CAUTION";
 
@@ -6,12 +7,12 @@ export const ALERT_TYPES: AlertType[] = ["NOTE", "TIP", "IMPORTANT", "WARNING", 
 
 // Single source of truth for label/color, shared by the toolbar buttons,
 // slash commands, and the accessible label rendered on each alert.
-export const ALERT_META: Record<AlertType, { label: string; color: string }> = {
-  NOTE: { label: "Note", color: "#4493f8" },
-  TIP: { label: "Tip", color: "#3fb950" },
-  IMPORTANT: { label: "Important", color: "#ab7df8" },
-  WARNING: { label: "Warning", color: "#d29922" },
-  CAUTION: { label: "Caution", color: "#f85149" },
+export const ALERT_META: Record<AlertType, { label: Message; color: string }> = {
+  NOTE: { label: msg("Note"), color: "#4493f8" },
+  TIP: { label: msg("Tip"), color: "#3fb950" },
+  IMPORTANT: { label: msg("Important"), color: "#ab7df8" },
+  WARNING: { label: msg("Warning"), color: "#d29922" },
+  CAUTION: { label: msg("Caution"), color: "#f85149" },
 };
 
 function normalizeAlertType(value: unknown): AlertType {
@@ -53,7 +54,7 @@ export const AlertBlockquote = Node.create({
       "blockquote",
       mergeAttributes(HTMLAttributes, {
         class: `alert alert-${alertType.toLowerCase()}`,
-        "aria-label": `${label} callout`,
+        "aria-label": tNow("{label} callout", { label: tNow(label) }),
       }),
       0,
     ];

@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from "react";
 import { ChevronRightIcon } from "../icons";
+import { useT } from "../../i18n";
 
 const STORAGE_KEY = "ratura:foldersSectionCollapsed";
 
@@ -45,11 +46,12 @@ export function SidebarFolderSection({
   onCollapsedChange,
   children,
 }: SidebarFolderSectionProps) {
+  const t = useT();
   const contentId = useId();
   const expanded = !collapsed;
 
   return (
-    <section aria-label="Folders" className="flex flex-col gap-0.5">
+    <section aria-label={t("Folders")} className="flex flex-col gap-0.5">
       <button
         type="button"
         aria-label={`${expanded ? "Collapse" : "Expand"} Folders`}
@@ -58,7 +60,7 @@ export function SidebarFolderSection({
         onClick={() => onCollapsedChange(!collapsed)}
         className="flex h-8 w-full shrink-0 items-center gap-1 rounded-sm px-2 text-left text-xs font-medium text-text-muted outline-none transition-colors hover:bg-bg-muted hover:text-text focus-visible:bg-bg-muted focus-visible:text-text active:bg-bg-muted motion-reduce:transition-none"
       >
-        <span>Folders</span>
+        <span>{t("Folders")}</span>
         <ChevronRightIcon
           aria-hidden="true"
           className={`h-3.5 w-3.5 shrink-0 stroke-[1.7] transition-transform duration-150 motion-reduce:transition-none${

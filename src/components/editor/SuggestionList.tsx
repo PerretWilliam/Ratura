@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "../../lib/utils";
+import { t as tNow } from "../../i18n";
 
 export interface SuggestionListRef {
   onKeyDown: (props: { event: KeyboardEvent }) => boolean;
@@ -27,7 +28,7 @@ function SuggestionListInner<T>(
     command,
     itemKey,
     renderItem,
-    emptyText = "No results",
+    emptyText = tNow("No results"),
     width = "w-64",
   }: SuggestionListProps<T>,
   ref: React.ForwardedRef<SuggestionListRef>,

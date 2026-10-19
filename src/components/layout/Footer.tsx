@@ -12,6 +12,7 @@ import {
 } from "../icons";
 import { cn } from "../../lib/utils";
 import { mod, isMac } from "../../lib/platform";
+import { useT } from "../../i18n";
 
 interface FooterProps {
   onOpenSettings?: () => void;
@@ -22,6 +23,7 @@ export const Footer = memo(function Footer({
   onOpenSettings,
   onOpenCommit,
 }: FooterProps) {
+  const t = useT();
   const {
     status,
     isLoading,
@@ -52,9 +54,9 @@ export const Footer = memo(function Footer({
   const handleEnableGit = useCallback(async () => {
     const success = await initRepo();
     if (success) {
-      toast.success("Git repository initialized");
+      toast.success(t("Git repository initialized"));
     } else {
-      toast.error("Failed to initialize Git");
+      toast.error(t("Failed to initialize Git"));
     }
   }, [initRepo]);
 
@@ -67,13 +69,13 @@ export const Footer = memo(function Footer({
     // Not a git repo - show init option
     if (status && !status.isRepo) {
       return (
-        <Tooltip content="Initialize Git repository">
+        <Tooltip content={t("Initialize Git repository")}>
           <Button
             onClick={handleEnableGit}
             variant="ghost"
             className="text-xs h-auto p-0 hover:bg-transparent"
           >
-            Enable Git
+            {t("Enable Git")}
           </Button>
         </Tooltip>
       );
@@ -96,7 +98,7 @@ export const Footer = memo(function Footer({
             </span>
           </Tooltip>
         ) : status ? (
-          <Tooltip content="No branch (set up git in settings)">
+          <Tooltip content={t("No branch (set up git in settings)")}>
             <span className="text-text-muted flex items-center">
               <GitBranchDeletedIcon className="w-4.5 h-4.5 stroke-[1.5] opacity-50" />
             </span>
@@ -105,8 +107,8 @@ export const Footer = memo(function Footer({
 
         {/* Changes indicator — hidden when there's an error so we don't show a stale count alongside it */}
         {hasChanges && !lastError && (
-          <Tooltip content="You have uncommitted changes">
-            <span className="text-xs text-text-muted/70">Files changed</span>
+          <Tooltip content={t("You have uncommitted changes")}>
+            <span className="text-xs text-text-muted/70">{t("Files changed")}</span>
           </Tooltip>
         )}
 
@@ -118,7 +120,7 @@ export const Footer = memo(function Footer({
               variant="link"
               className="text-xs h-auto p-0 text-red-500 hover:text-red-600 hover:no-underline"
             >
-              An error occurred
+              {t("An error occurred")}
             </Button>
           </Tooltip>
         )}
@@ -137,14 +139,14 @@ export const Footer = memo(function Footer({
     gitEnabled && gitAvailable && status?.hasRemote && status?.hasUpstream;
 
   const syncTooltip = isSyncing
-    ? "Syncing..."
+    ? t("Syncing...")
     : behindCount > 0 && aheadCount > 0
-      ? `${behindCount} to pull, ${aheadCount} to push`
+      ? t("{pull} to pull, {push} to push", { pull: behindCount, push: aheadCount })
       : behindCount > 0
-        ? `${behindCount} commit${behindCount === 1 ? "" : "s"} to pull`
+        ? t("Commits to pull: {count}", { count: behindCount })
         : aheadCount > 0
-          ? `${aheadCount} commit${aheadCount === 1 ? "" : "s"} to push`
-          : "Synced with remote";
+          ? t("Commits to push: {count}", { count: aheadCount })
+          : t("Synced with remote");
 
   const hasGitFooterContent =
     showCommitButton || showSyncButton || renderGitStatus() !== null;
@@ -155,7 +157,7 @@ export const Footer = memo(function Footer({
       <div className="absolute bottom-3 right-3">
         <IconButton
           onClick={onOpenSettings}
-          title={`Settings (${mod}${isMac ? "" : "+"}, to toggle)`}
+          title={t("Settings ({shortcut} to toggle)", { shortcut: `${mod}${isMac ? "" : "+"},` })}
           className="rounded-lg bg-bg-secondary border border-border hover:bg-bg-muted backdrop-blur-sm w-8 h-8"
         >
           <SettingsIcon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -176,7 +178,7 @@ export const Footer = memo(function Footer({
               <IconButton
                 onClick={handleSync}
                 disabled={isSyncing}
-                aria-label="Sync"
+                aria-label={t("Sync")}
               >
                 {isSyncing ? (
                   <SpinnerIcon className="w-4.5 h-4.5 stroke-[1.5] animate-spin" />
@@ -202,7 +204,7 @@ export const Footer = memo(function Footer({
             <IconButton
               onClick={handleCommit}
               disabled={isCommitting}
-              title="Commit Changes"
+              title={t("Commit Changes")}
             >
               {isCommitting ? (
                 <SpinnerIcon className="w-4.5 h-4.5 stroke-[1.5] animate-spin" />
@@ -213,7 +215,7 @@ export const Footer = memo(function Footer({
           )}
           <IconButton
             onClick={onOpenSettings}
-            title={`Settings (${mod}${isMac ? "" : "+"}, to toggle)`}
+            title={t("Settings ({shortcut} to toggle)", { shortcut: `${mod}${isMac ? "" : "+"},` })}
           >
             <SettingsIcon className="w-4.5 h-4.5 stroke-[1.5]" />
           </IconButton>

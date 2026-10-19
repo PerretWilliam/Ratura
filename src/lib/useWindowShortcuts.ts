@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useTheme } from "../context/ThemeContext";
 import { resolveWindowShortcut } from "./windowShortcuts";
+import { t as tNow } from "../i18n";
 
 interface UseWindowShortcutsOptions {
   onOpenPreferences: () => void | Promise<void>;
@@ -23,7 +24,7 @@ export function useWindowShortcuts({
       if (action === "preferences") {
         void Promise.resolve(onOpenPreferences()).catch((error) => {
           console.error("Failed to open preferences:", error);
-          toast.error("Failed to open preferences");
+          toast.error(tNow("Failed to open preferences"));
         });
         return;
       }
@@ -31,7 +32,7 @@ export function useWindowShortcuts({
       if (action === "zoom-reset") {
         interfaceZoomRef.current = 1;
         setInterfaceZoom(1);
-        toast("Zoom 100%", { id: "zoom", duration: 1500 });
+        toast(tNow("Zoom {percent}%", { percent: 100 }), { id: "zoom", duration: 1500 });
         return;
       }
 
@@ -41,7 +42,7 @@ export function useWindowShortcuts({
       ) / 20;
       interfaceZoomRef.current = next;
       setInterfaceZoom((current) => current + delta);
-      toast(`Zoom ${Math.round(next * 100)}%`, {
+      toast(tNow("Zoom {percent}%", { percent: Math.round(next * 100) }), {
         id: "zoom",
         duration: 1500,
       });

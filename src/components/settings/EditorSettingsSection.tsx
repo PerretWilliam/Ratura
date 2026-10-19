@@ -10,58 +10,65 @@ import type {
 } from "../../types/note";
 import { ChevronRightIcon, EyeIcon, MinusIcon, PlusIcon } from "../icons";
 import { cn } from "../../lib/utils";
+import { msg, useT, type Message } from "../../i18n";
 
 // Human-readable labels for theme color keys, grouped logically
-const colorLabels: { key: ThemeColorKey; label: string; group: string }[] = [
+const colorLabels: { key: ThemeColorKey; label: Message; group: Message }[] = [
   // Surfaces
-  { key: "bg", label: "Background", group: "Surfaces" },
-  { key: "bg-secondary", label: "Sidebar", group: "Surfaces" },
-  { key: "bg-muted", label: "Hover & Subtle Fill", group: "Surfaces" },
-  { key: "bg-emphasis", label: "Strong Fill", group: "Surfaces" },
+  { key: "bg", label: msg("Background"), group: msg("Surfaces") },
+  { key: "bg-secondary", label: msg("Sidebar"), group: msg("Surfaces") },
+  { key: "bg-muted", label: msg("Hover & Subtle Fill"), group: msg("Surfaces") },
+  { key: "bg-emphasis", label: msg("Strong Fill"), group: msg("Surfaces") },
   // Text & UI
-  { key: "text", label: "Text", group: "Text & UI" },
-  { key: "text-muted", label: "Secondary Text", group: "Text & UI" },
-  { key: "accent", label: "Primary & Buttons", group: "Text & UI" },
-  { key: "border", label: "Borders", group: "Text & UI" },
-  { key: "selection", label: "Selection Highlight", group: "Text & UI" },
+  { key: "text", label: msg("Text"), group: msg("Text & UI") },
+  { key: "text-muted", label: msg("Secondary Text"), group: msg("Text & UI") },
+  { key: "accent", label: msg("Primary & Buttons"), group: msg("Text & UI") },
+  { key: "border", label: msg("Borders"), group: msg("Text & UI") },
+  { key: "selection", label: msg("Selection Highlight"), group: msg("Text & UI") },
 ];
 
 // Text direction options
-const textDirectionOptions: { value: TextDirection; label: string }[] = [
-  { value: "auto", label: "Auto" },
-  { value: "ltr", label: "LTR" },
-  { value: "rtl", label: "RTL" },
+const textDirectionOptions: { value: TextDirection; label: Message }[] = [
+  { value: "auto", label: msg("Auto") },
+  { value: "ltr", label: msg("LTR") },
+  { value: "rtl", label: msg("RTL") },
 ];
 
 // Page width options
-const editorWidthOptions: { value: EditorWidth; label: string }[] = [
-  { value: "narrow", label: "Narrow" },
-  { value: "normal", label: "Normal" },
-  { value: "wide", label: "Wide" },
-  { value: "full", label: "Full" },
-  { value: "custom", label: "Custom" },
+const editorWidthOptions: { value: EditorWidth; label: Message }[] = [
+  { value: "narrow", label: msg("Narrow") },
+  { value: "normal", label: msg("Normal") },
+  { value: "wide", label: msg("Wide") },
+  { value: "full", label: msg("Full") },
+  { value: "custom", label: msg("Custom") },
 ];
 
 // Font family options
-const fontFamilyOptions: { value: FontFamily; label: string }[] = [
-  { value: "system-sans", label: "Sans" },
-  { value: "serif", label: "Serif" },
-  { value: "monospace", label: "Mono" },
+const fontFamilyOptions: { value: FontFamily; label: Message }[] = [
+  { value: "system-sans", label: msg("Sans") },
+  { value: "serif", label: msg("Serif") },
+  { value: "monospace", label: msg("Mono") },
 ];
 
 // Paste mode options
-const pasteModeOptions: { value: PasteMode; label: string; description: string }[] = [
-  { value: "markdown", label: "Markdown", description: "Parse and render markdown syntax" },
-  { value: "plain", label: "Plain text", description: "Insert as plain text, no formatting" },
-  { value: "code-block", label: "Code block", description: "Wrap in a ``` code block" },
+const pasteModeOptions: { value: PasteMode; label: Message; description: Message }[] = [
+  { value: "markdown", label: msg("Markdown"), description: msg("Parse and render markdown syntax") },
+  { value: "plain", label: msg("Plain text"), description: msg("Insert as plain text, no formatting") },
+  { value: "code-block", label: msg("Code block"), description: msg("Wrap in a ``` code block") },
 ];
+
+const themeModeLabels = {
+  light: msg("Light"),
+  dark: msg("Dark"),
+  system: msg("System"),
+};
 
 // Bold weight options (medium excluded for monospace)
 const boldWeightOptions = [
-  { value: 500, label: "Medium", excludeForMonospace: true },
-  { value: 600, label: "Semibold", excludeForMonospace: false },
-  { value: 700, label: "Bold", excludeForMonospace: false },
-  { value: 800, label: "Extra Bold", excludeForMonospace: false },
+  { value: 500, label: msg("Medium"), excludeForMonospace: true },
+  { value: 600, label: msg("Semibold"), excludeForMonospace: false },
+  { value: 700, label: msg("Bold"), excludeForMonospace: false },
+  { value: 800, label: msg("Extra Bold"), excludeForMonospace: false },
 ];
 
 interface EditorWidthResizeControlProps {
@@ -84,6 +91,7 @@ function BinarySettingControl({
   value,
   onChange,
 }: BinarySettingControlProps) {
+  const t = useT();
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
@@ -102,7 +110,7 @@ function BinarySettingControl({
           aria-pressed={!value}
           onClick={() => onChange(false)}
         >
-          Off
+          {t("Off")}
         </Button>
         <Button
           type="button"
@@ -111,7 +119,7 @@ function BinarySettingControl({
           aria-pressed={value}
           onClick={() => onChange(true)}
         >
-          On
+          {t("On")}
         </Button>
       </div>
     </div>
@@ -122,11 +130,12 @@ export function EditorWidthResizeControl({
   enabled,
   onChange,
 }: EditorWidthResizeControlProps) {
+  const t = useT();
   return (
     <BinarySettingControl
-      label="Resize with Mouse"
-      description="Drag the page edges to change its width"
-      ariaLabel="Resize editor with mouse"
+      label={t("Resize with Mouse")}
+      description={t("Drag the page edges to change its width")}
+      ariaLabel={t("Resize editor with mouse")}
       value={enabled}
       onChange={onChange}
     />
@@ -142,11 +151,12 @@ export function EditorToolbarVisibilityControl({
   visible,
   onChange,
 }: EditorToolbarVisibilityControlProps) {
+  const t = useT();
   return (
     <BinarySettingControl
-      label="Formatting Toolbar"
-      description="Show the fixed toolbar above the document"
-      ariaLabel="Show formatting toolbar"
+      label={t("Formatting Toolbar")}
+      description={t("Show the fixed toolbar above the document")}
+      ariaLabel={t("Show formatting toolbar")}
       value={visible}
       onChange={onChange}
     />
@@ -168,6 +178,7 @@ export function TitleBarNoteInfoControls({
   onModifiedDateChange,
   onFilenameChange,
 }: TitleBarNoteInfoControlsProps) {
+  const t = useT();
   let mode: TitleBarNoteInfoMode = "none";
   if (filenameVisible) {
     mode = "filename";
@@ -197,23 +208,23 @@ export function TitleBarNoteInfoControls({
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
         <div className="text-sm text-text font-medium">
-          Title Bar Information
+          {t("Title Bar Information")}
         </div>
         <p className="text-xs text-text-muted">
-          Choose what appears beside the note icon
+          {t("Choose what appears beside the note icon")}
         </p>
       </div>
       <Select
-        aria-label="Title bar information"
+        aria-label={t("Title bar information")}
         value={mode}
         onChange={(event) =>
           handleModeChange(event.target.value as TitleBarNoteInfoMode)
         }
         className="w-44"
       >
-        <option value="modifiedDate">Modification Date</option>
-        <option value="filename">Filename</option>
-        <option value="none">None</option>
+        <option value="modifiedDate">{t("Modification Date")}</option>
+        <option value="filename">{t("Filename")}</option>
+        <option value="none">{t("None")}</option>
       </Select>
     </div>
   );
@@ -257,6 +268,7 @@ export function AppearanceSettingsSection() {
     customCss,
     setCustomCss,
   } = useTheme();
+  const t = useT();
 
   // Validated numeric change handler
   const handleNumericChange = (
@@ -304,7 +316,7 @@ export function AppearanceSettingsSection() {
     <div className="space-y-8 py-8">
       {/* Theme Section */}
       <section className="pb-2">
-        <h2 className="text-xl font-medium mb-3">Theme</h2>
+        <h2 className="text-xl font-medium mb-3">{t("Theme")}</h2>
         <div className="flex gap-2 p-1 rounded-[10px] border border-border">
           {(["light", "dark", "system"] as const).map((mode) => (
             <Button
@@ -314,13 +326,15 @@ export function AppearanceSettingsSection() {
               size="md"
               className="flex-1"
             >
-              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              {t(themeModeLabels[mode])}
             </Button>
           ))}
         </div>
         {theme === "system" && (
           <p className="mt-3 text-sm text-text-muted">
-            Currently using {resolvedTheme} mode based on system preference
+            {resolvedTheme === "dark"
+              ? t("Currently using dark mode based on system preference")
+              : t("Currently using light mode based on system preference")}
           </p>
         )}
 
@@ -328,7 +342,7 @@ export function AppearanceSettingsSection() {
         {theme === "system" ? (
           <div className="mt-4 space-y-2">
             <ColorsExpandable
-              label="Customize light colors"
+              label={t("Customize light colors")}
               mode="light"
               customColors={customColorsLight}
               setCustomColor={setCustomColor}
@@ -336,7 +350,7 @@ export function AppearanceSettingsSection() {
               resetAllCustomColors={resetAllCustomColors}
             />
             <ColorsExpandable
-              label="Customize dark colors"
+              label={t("Customize dark colors")}
               mode="dark"
               customColors={customColorsDark}
               setCustomColor={setCustomColor}
@@ -346,7 +360,7 @@ export function AppearanceSettingsSection() {
           </div>
         ) : (
           <ColorsExpandable
-            label="Customize colors"
+            label={t("Customize colors")}
             mode={resolvedTheme}
             customColors={
               resolvedTheme === "dark" ? customColorsDark : customColorsLight
@@ -364,11 +378,11 @@ export function AppearanceSettingsSection() {
 
       {/* Writing Section */}
       <section>
-        <h2 className="text-xl font-medium mb-3">Writing</h2>
+        <h2 className="text-xl font-medium mb-3">{t("Writing")}</h2>
         <div className="rounded-[10px] border border-border pl-4 py-3 pr-3 space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm text-text font-medium">
-              Spell Check
+              {t("Spell Check")}
             </label>
             <div className="flex gap-1 p-1 rounded-[10px] border border-border shrink-0">
               <Button
@@ -376,21 +390,21 @@ export function AppearanceSettingsSection() {
                 variant={!spellCheckEnabled ? "primary" : "ghost"}
                 size="xs"
               >
-                Off
+                {t("Off")}
               </Button>
               <Button
                 onClick={() => setSpellCheckEnabled(true)}
                 variant={spellCheckEnabled ? "primary" : "ghost"}
                 size="xs"
               >
-                On
+                {t("On")}
               </Button>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <label className="text-sm text-text font-medium">
-              Auto Correct
+              {t("Auto Correct")}
             </label>
             <div className="flex gap-1 p-1 rounded-[10px] border border-border shrink-0">
               <Button
@@ -398,22 +412,22 @@ export function AppearanceSettingsSection() {
                 variant={!autoCorrectEnabled ? "primary" : "ghost"}
                 size="xs"
               >
-                Off
+                {t("Off")}
               </Button>
               <Button
                 onClick={() => setAutoCorrectEnabled(true)}
                 variant={autoCorrectEnabled ? "primary" : "ghost"}
                 size="xs"
               >
-                On
+                {t("On")}
               </Button>
             </div>
           </div>
         </div>
         <p className="mt-3 text-sm text-text-muted">
-          Auto Correct requires Spell Check. Enabling it also enables Spell
-          Check. Spell checking may reduce performance when inserting large
-          amounts of text.
+          {t(
+            "Auto Correct requires Spell Check. Enabling it also enables Spell Check. Spell checking may reduce performance when inserting large amounts of text.",
+          )}
         </p>
       </section>
 
@@ -423,10 +437,10 @@ export function AppearanceSettingsSection() {
       {/* Typography Section */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-xl font-medium">Typography</h2>
+          <h2 className="text-xl font-medium">{t("Typography")}</h2>
           {hasCustomAppearanceSettings && (
             <Button onClick={resetEditorFontSettings} variant="ghost" size="sm">
-              Reset to defaults
+              {t("Reset to defaults")}
             </Button>
           )}
         </div>
@@ -434,7 +448,7 @@ export function AppearanceSettingsSection() {
         <div className="rounded-[10px] border border-border pl-4 py-3 pr-3 space-y-2">
           {/* Font Family */}
           <div className="flex items-center justify-between">
-            <label className="text-sm text-text font-medium">Font</label>
+            <label className="text-sm text-text font-medium">{t("Font")}</label>
             <Select
               value={editorFontSettings.baseFontFamily}
               onChange={(e) =>
@@ -444,7 +458,7 @@ export function AppearanceSettingsSection() {
             >
               {fontFamilyOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.label)}
                 </option>
               ))}
             </Select>
@@ -452,7 +466,7 @@ export function AppearanceSettingsSection() {
 
           {/* Base Font Size */}
           <div className="flex items-center justify-between">
-            <label className="text-sm text-text font-medium">Size</label>
+            <label className="text-sm text-text font-medium">{t("Size")}</label>
             <div className="relative w-40">
               <Input
                 type="number"
@@ -469,7 +483,7 @@ export function AppearanceSettingsSection() {
 
           {/* Bold Weight */}
           <div className="flex items-center justify-between">
-            <label className="text-sm text-text font-medium">Bold Weight</label>
+            <label className="text-sm text-text font-medium">{t("Bold Weight")}</label>
             <Select
               value={editorFontSettings.boldWeight}
               onChange={(e) =>
@@ -479,7 +493,7 @@ export function AppearanceSettingsSection() {
             >
               {availableWeightOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.label)}
                 </option>
               ))}
             </Select>
@@ -487,7 +501,7 @@ export function AppearanceSettingsSection() {
 
           {/* Line Height */}
           <div className="flex items-center justify-between">
-            <label className="text-sm text-text font-medium">Line Height</label>
+            <label className="text-sm text-text font-medium">{t("Line Height")}</label>
             <div className="relative w-40">
               <Input
                 type="number"
@@ -506,7 +520,7 @@ export function AppearanceSettingsSection() {
           {/* Text Direction */}
           <div className="flex items-center justify-between">
             <label className="text-sm text-text font-medium">
-              Text Direction
+              {t("Text Direction")}
             </label>
             <Select
               value={textDirection}
@@ -517,7 +531,7 @@ export function AppearanceSettingsSection() {
             >
               {textDirectionOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.label)}
                 </option>
               ))}
             </Select>
@@ -525,7 +539,7 @@ export function AppearanceSettingsSection() {
 
           {/* Page Width */}
           <div className="flex items-center justify-between">
-            <label className="text-sm text-text font-medium">Page Width</label>
+            <label className="text-sm text-text font-medium">{t("Page Width")}</label>
             <Select
               value={editorWidth}
               onChange={(e) => setEditorWidth(e.target.value as EditorWidth)}
@@ -533,7 +547,7 @@ export function AppearanceSettingsSection() {
             >
               {editorWidthOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.label)}
                 </option>
               ))}
             </Select>
@@ -541,7 +555,7 @@ export function AppearanceSettingsSection() {
           {editorWidth === "custom" && (
             <div className="flex items-center justify-between">
               <label className="text-sm text-text font-medium">
-                Custom Width
+                {t("Custom Width")}
               </label>
               <div className="relative w-40 flex items-center gap-2">
                 <Input
@@ -585,7 +599,7 @@ export function AppearanceSettingsSection() {
           {/* Interface Zoom */}
           <div className="flex items-center justify-between">
             <label className="text-sm text-text font-medium">
-              Interface Zoom
+              {t("Interface Zoom")}
             </label>
             <div className="flex items-center gap-1 w-40">
               <IconButton
@@ -593,7 +607,7 @@ export function AppearanceSettingsSection() {
                 size="md"
                 onClick={() => setInterfaceZoom((prev) => prev - 0.05)}
                 disabled={interfaceZoom <= 0.7}
-                title="Zoom out"
+                title={t("Zoom out")}
               >
                 <MinusIcon className="w-4 h-4" />
               </IconButton>
@@ -605,7 +619,7 @@ export function AppearanceSettingsSection() {
                 size="md"
                 onClick={() => setInterfaceZoom((prev) => prev + 0.05)}
                 disabled={interfaceZoom >= 1.5}
-                title="Zoom in"
+                title={t("Zoom in")}
               >
                 <PlusIcon className="w-4 h-4" />
               </IconButton>
@@ -617,7 +631,7 @@ export function AppearanceSettingsSection() {
         <div className="mt-3 relative">
           <div className="absolute top-3 left-4 flex items-center text-sm font-medium text-text-muted/70 gap-1">
             <EyeIcon className="w-4.5 h-4.5 stroke-[1.5]" />
-            <span>Preview</span>
+            <span>{t("Preview")}</span>
           </div>
           <div className="border border-border rounded-[10px] bg-bg p-6 pt-20 max-h-160 overflow-hidden rounded-t-lg">
             <div
@@ -722,11 +736,11 @@ export function AppearanceSettingsSection() {
 
       {/* Custom CSS Section */}
       <section className="pb-2">
-        <h2 className="text-xl font-medium mb-1">Custom CSS</h2>
+        <h2 className="text-xl font-medium mb-1">{t("Custom CSS")}</h2>
         <p className="text-sm text-text-muted mb-3">
-          Applied on top of the app styles. Theme colors are CSS variables
-          such as <code>--color-bg</code> or <code>--color-accent</code>; use{" "}
-          <code>!important</code> to override them.
+          {t(
+            "Applied on top of the app styles. Theme colors are CSS variables such as --color-bg or --color-accent; use !important to override them.",
+          )}
         </p>
         <Textarea
           value={customCss}
@@ -736,7 +750,7 @@ export function AppearanceSettingsSection() {
           }
           rows={10}
           spellCheck={false}
-          aria-label="Custom CSS"
+          aria-label={t("Custom CSS")}
           className="font-mono text-xs resize-y"
         />
         {customCss && (
@@ -746,7 +760,7 @@ export function AppearanceSettingsSection() {
             size="sm"
             className="mt-2"
           >
-            Clear custom CSS
+            {t("Clear custom CSS")}
           </Button>
         )}
       </section>
@@ -756,13 +770,16 @@ export function AppearanceSettingsSection() {
 
       {/* Editing Section */}
       <section className="pb-2">
-        <h2 className="text-xl font-medium mb-3">Editing</h2>
+        <h2 className="text-xl font-medium mb-3">{t("Editing")}</h2>
         <div className="rounded-[10px] border border-border pl-4 py-3 pr-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
-              <label className="text-sm text-text font-medium">Paste mode</label>
+              <label className="text-sm text-text font-medium">{t("Paste mode")}</label>
               <span className="text-xs text-text-muted">
-                {pasteModeOptions.find((o) => o.value === pasteMode)?.description}
+                {t(
+                  pasteModeOptions.find((o) => o.value === pasteMode)
+                    ?.description ?? pasteModeOptions[0].description,
+                )}
               </span>
             </div>
             <Select
@@ -772,7 +789,7 @@ export function AppearanceSettingsSection() {
             >
               {pasteModeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.label)}
                 </option>
               ))}
             </Select>
@@ -805,6 +822,7 @@ function ColorsExpandable({
   resetAllCustomColors: (mode: "light" | "dark") => void;
   className?: string;
 }) {
+  const t = useT();
   const defaults = defaultThemeColors[mode];
   const hasAnyCustom = Object.keys(customColors).length > 0;
 
@@ -823,7 +841,7 @@ function ColorsExpandable({
             size="sm"
             className="ml-auto"
           >
-            Reset all
+            {t("Reset all")}
           </Button>
         )}
       </summary>
@@ -839,12 +857,12 @@ function ColorsExpandable({
                   <div
                     className={`text-base text-text-muted font-medium ${key !== colorLabels[0].key ? "mt-6" : ""} mb-2.5`}
                   >
-                    {group}
+                    {t(group)}
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-text font-medium">
-                    {colorLabel}
+                    {t(colorLabel)}
                   </label>
                   <ColorPicker
                     color={customColors[key] ?? defaults[key]}

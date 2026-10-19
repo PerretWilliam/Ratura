@@ -61,6 +61,7 @@ import {
   type TableEdgeDragAxis,
 } from "./tableEdgeDrag";
 import { resolveTableAutoScrollDelta } from "./tableAutoScroll";
+import { useT, type Message } from "../../../i18n";
 
 interface TableSelectionContext {
   tablePos: number;
@@ -441,6 +442,7 @@ function ActionButton({
 }
 
 export function TableControls({ editor }: { editor: Editor }) {
+  const t = useT();
   const [layout, setLayout] = useState<TableLayout | null>(null);
   const [proximityTarget, setProximityTarget] =
     useState<TableProximityTarget | null>(null);
@@ -462,10 +464,13 @@ export function TableControls({ editor }: { editor: Editor }) {
   const pointerFrameRef = useRef<number | null>(null);
   const keyboardFocusRowRef = useRef<number | null>(null);
   const actionTokens = actionQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  const actionMatches = (...labels: string[]) =>
+  // Matches the English label, its synonyms and the translated label
+  const actionMatches = (label: Message, ...synonyms: string[]) =>
     actionTokens.length === 0 ||
     actionTokens.every((token) =>
-      labels.some((label) => label.toLocaleLowerCase().includes(token)),
+      [label, t(label), ...synonyms].some((text) =>
+        text.toLocaleLowerCase().includes(token),
+      ),
     );
 
   useEffect(() => {
@@ -645,7 +650,7 @@ export function TableControls({ editor }: { editor: Editor }) {
       return;
     }
     const handle = document.querySelector<HTMLButtonElement>(
-      `.notion-table-row-handle[aria-label="Drag row ${rowIndex + 1}"]`,
+      `.notion-table-row-handle[data-row-index="${rowIndex}"]`,
     );
     if (!handle) return;
     keyboardFocusRowRef.current = null;
@@ -1001,7 +1006,7 @@ export function TableControls({ editor }: { editor: Editor }) {
       );
       finishSession();
       if (setTableColumnWidths(editor, layout.tablePos, committedWidths)) {
-        setAnnouncement(`Column ${columnIndex + 1} resized to ${width}px`);
+        setAnnouncement(t("Column {columnIndex} resized to {width}px", { columnIndex: columnIndex + 1, width }));
       }
       requestAnimationFrame(update);
     };
@@ -1343,13 +1348,13 @@ export function TableControls({ editor }: { editor: Editor }) {
 
   const moveRow = (from: number, to: number) => {
     if (moveTableRow(editor, layout.tablePos, from, to)) {
-      setAnnouncement(`Row ${from + 1} moved to position ${to + 1}`);
+      setAnnouncement(t("Row {from} moved to position {to}", { from: from + 1, to: to + 1 }));
       requestAnimationFrame(update);
     }
   };
   const moveColumn = (from: number, to: number) => {
     if (moveTableColumn(editor, layout.tablePos, from, to)) {
-      setAnnouncement(`Column ${from + 1} moved to position ${to + 1}`);
+      setAnnouncement(t("Column {from} moved to position {to}", { from: from + 1, to: to + 1 }));
       requestAnimationFrame(update);
     }
   };
@@ -1378,7 +1383,7 @@ export function TableControls({ editor }: { editor: Editor }) {
       : layout.columnRects[columnResizeIndex] ?? null;
 
   return createPortal(
-    <div className="notion-table-controls" aria-label="Table controls">
+    <div className="notion-table-controls" aria-label={t("Table controls")}>
       {actionsOpen && (
         <div
           className="notion-table-actionbar"
@@ -1393,17 +1398,17 @@ export function TableControls({ editor }: { editor: Editor }) {
         <input
           type="search"
           className="notion-table-action-search"
-          aria-label="Search table actions"
-          placeholder="Search actions"
+          aria-label={t("Search table actions")}
+          placeholder={t("Search actions")}
           value={actionQuery}
           onChange={(event) => {
             setActionQuery(event.currentTarget.value);
             setColorTarget(null);
           }}
         />
-        <span className="notion-table-action-label">Table</span>
+        <span className="notion-table-action-label">{t("Table")}</span>
         <ActionButton
-          label="Fit table to width"
+          label={t("Fit table to width")}
           hidden={!actionMatches("Fit table to width")}
           pressed={tableNode?.attrs.fitToWidth === true}
           onClick={() => {
@@ -1423,7 +1428,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           ↔
         </ActionButton>
         <ActionButton
-          label="Toggle header row"
+          label={t("Toggle header row")}
           hidden={!actionMatches("Toggle header row")}
           pressed={hasPinnedHeader}
           onClick={() => {
@@ -1437,7 +1442,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           H↔
         </ActionButton>
         <ActionButton
-          label="Toggle header column"
+          label={t("Toggle header column")}
           hidden={!actionMatches("Toggle header column")}
           pressed={hasPinnedHeaderColumn}
           onClick={() => {
@@ -1451,9 +1456,9 @@ export function TableControls({ editor }: { editor: Editor }) {
           H↕
         </ActionButton>
         <span className="notion-table-action-separator" />
-        <span className="notion-table-action-label">Row</span>
+        <span className="notion-table-action-label">{t("Row")}</span>
         <ActionButton
-          label="Move row up"
+          label={t("Move row up")}
           hidden={!actionMatches("Move row up")}
           disabled={
             layout.rowIndex === 0 ||
@@ -1464,7 +1469,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           ↑
         </ActionButton>
         <ActionButton
-          label="Move row down"
+          label={t("Move row down")}
           hidden={!actionMatches("Move row down")}
           disabled={
             layout.rowIndex >= layout.rowRects.length - 1 ||
@@ -1475,7 +1480,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           ↓
         </ActionButton>
         <ActionButton
-          label="Duplicate row"
+          label={t("Duplicate row")}
           hidden={!actionMatches("Duplicate row")}
           disabled={hasPinnedHeader && layout.rowIndex === 0}
           onClick={() => duplicateTableRow(editor, layout.tablePos, layout.rowIndex)}
@@ -1483,27 +1488,27 @@ export function TableControls({ editor }: { editor: Editor }) {
           ⧉
         </ActionButton>
         <ActionButton
-          label="Clear row contents"
+          label={t("Clear row contents")}
           hidden={!actionMatches("Clear row contents")}
           disabled={hasPinnedHeader && layout.rowIndex === 0}
           onClick={() => {
             if (
               clearTableRow(editor, layout.tablePos, layout.rowIndex)
             ) {
-              setAnnouncement(`Row ${layout.rowIndex + 1} cleared`);
+              setAnnouncement(t("Row {rowIndex} cleared", { rowIndex: layout.rowIndex + 1 }));
               requestAnimationFrame(update);
             }
           }}
         >
-          Tx
+          {t("Tx")}
         </ActionButton>
         <ActionButton
-          label="Add row above"
+          label={t("Add row above")}
           hidden={!actionMatches("Add row above", "Insert above")}
           onClick={() => {
             if (insertTableRow(editor, layout.tablePos, layout.rowIndex)) {
               selectTableAxis(editor, layout, "row", layout.rowIndex);
-              setAnnouncement(`Row added above row ${layout.rowIndex + 1}`);
+              setAnnouncement(t("Row added above row {rowIndex}", { rowIndex: layout.rowIndex + 1 }));
               requestAnimationFrame(update);
             }
           }}
@@ -1511,12 +1516,12 @@ export function TableControls({ editor }: { editor: Editor }) {
           <ArrowUpToLineIcon className="w-4 h-4" />
         </ActionButton>
         <ActionButton
-          label="Add row below"
+          label={t("Add row below")}
           hidden={!actionMatches("Add row below", "Insert below")}
           onClick={() => {
             if (insertTableRow(editor, layout.tablePos, layout.rowIndex + 1)) {
               selectTableAxis(editor, layout, "row", layout.rowIndex + 1);
-              setAnnouncement(`Row added below row ${layout.rowIndex + 1}`);
+              setAnnouncement(t("Row added below row {rowIndex}", { rowIndex: layout.rowIndex + 1 }));
               requestAnimationFrame(update);
             }
           }}
@@ -1524,7 +1529,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           <ArrowDownToLineIcon className="w-4 h-4" />
         </ActionButton>
         <ActionButton
-          label="Set row background"
+          label={t("Set row background")}
           hidden={!actionMatches("Set row background", "Color row")}
           onClick={() =>
             setColorTarget((current) => (current === "row" ? null : "row"))
@@ -1533,7 +1538,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           <span className="notion-table-color-chip" aria-hidden="true" />
         </ActionButton>
         <ActionButton
-          label="Delete row"
+          label={t("Delete row")}
           hidden={!actionMatches("Delete row")}
           disabled={
             layout.rowRects.length <= 1 ||
@@ -1554,9 +1559,9 @@ export function TableControls({ editor }: { editor: Editor }) {
           −
         </ActionButton>
         <span className="notion-table-action-separator" />
-        <span className="notion-table-action-label">Column</span>
+        <span className="notion-table-action-label">{t("Column")}</span>
         <ActionButton
-          label="Move column left"
+          label={t("Move column left")}
           hidden={!actionMatches("Move column left")}
           disabled={layout.columnIndex === 0}
           onClick={() => moveColumn(layout.columnIndex, layout.columnIndex - 1)}
@@ -1564,7 +1569,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           ←
         </ActionButton>
         <ActionButton
-          label="Move column right"
+          label={t("Move column right")}
           hidden={!actionMatches("Move column right")}
           disabled={layout.columnIndex >= layout.columnRects.length - 1}
           onClick={() => moveColumn(layout.columnIndex, layout.columnIndex + 1)}
@@ -1572,7 +1577,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           →
         </ActionButton>
         <ActionButton
-          label="Duplicate column"
+          label={t("Duplicate column")}
           hidden={!actionMatches("Duplicate column")}
           onClick={() =>
             duplicateTableColumn(editor, layout.tablePos, layout.columnIndex)
@@ -1581,7 +1586,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           ⧉
         </ActionButton>
         <ActionButton
-          label="Clear column contents"
+          label={t("Clear column contents")}
           hidden={!actionMatches("Clear column contents")}
           onClick={() => {
             if (
@@ -1591,15 +1596,15 @@ export function TableControls({ editor }: { editor: Editor }) {
                 layout.columnIndex,
               )
             ) {
-              setAnnouncement(`Column ${layout.columnIndex + 1} cleared`);
+              setAnnouncement(t("Column {columnIndex} cleared", { columnIndex: layout.columnIndex + 1 }));
               requestAnimationFrame(update);
             }
           }}
         >
-          Tx
+          {t("Tx")}
         </ActionButton>
         <ActionButton
-          label="Add column before"
+          label={t("Add column before")}
           hidden={!actionMatches("Add column before", "Insert left")}
           onClick={() => {
             if (
@@ -1607,7 +1612,7 @@ export function TableControls({ editor }: { editor: Editor }) {
             ) {
               selectTableAxis(editor, layout, "column", layout.columnIndex);
               setAnnouncement(
-                `Column added before column ${layout.columnIndex + 1}`,
+                t("Column added before column {columnIndex}", { columnIndex: layout.columnIndex + 1 }),
               );
               requestAnimationFrame(update);
             }
@@ -1616,7 +1621,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           <ArrowLeftToLineIcon className="w-4 h-4" />
         </ActionButton>
         <ActionButton
-          label="Add column after"
+          label={t("Add column after")}
           hidden={!actionMatches("Add column after", "Insert right")}
           onClick={() => {
             if (
@@ -1633,7 +1638,7 @@ export function TableControls({ editor }: { editor: Editor }) {
                 layout.columnIndex + 1,
               );
               setAnnouncement(
-                `Column added after column ${layout.columnIndex + 1}`,
+                t("Column added after column {columnIndex}", { columnIndex: layout.columnIndex + 1 }),
               );
               requestAnimationFrame(update);
             }
@@ -1642,7 +1647,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           <ArrowRightToLineIcon className="w-4 h-4" />
         </ActionButton>
         <ActionButton
-          label="Set column background"
+          label={t("Set column background")}
           hidden={!actionMatches("Set column background", "Color column")}
           onClick={() =>
             setColorTarget((current) =>
@@ -1653,7 +1658,7 @@ export function TableControls({ editor }: { editor: Editor }) {
           <span className="notion-table-color-chip" aria-hidden="true" />
         </ActionButton>
         <ActionButton
-          label="Delete column"
+          label={t("Delete column")}
           hidden={!actionMatches("Delete column")}
           disabled={layout.columnRects.length <= 1}
           onClick={() => {
@@ -1744,19 +1749,20 @@ export function TableControls({ editor }: { editor: Editor }) {
                   top:
                     viewportValueToInterface(rect.top + rect.height / 2) - 14,
                 }}
-                aria-label={`Drag row ${rowIndex + 1}`}
+                data-row-index={rowIndex}
+                aria-label={t("Drag row {rowIndex}", { rowIndex: rowIndex + 1 })}
                 aria-disabled={hasPinnedHeader && rowIndex === 0}
                 title={
                   hasPinnedHeader && rowIndex === 0
-                    ? "Header row is fixed for Markdown"
-                    : "Drag row"
+                    ? t("Header row is fixed for Markdown")
+                    : t("Drag row")
                 }
                 onPointerDown={(event) => {
                   const canStartDrag =
                     editor.state.selection.empty ||
                     editor.state.selection instanceof CellSelection;
                   if (selectTableAxis(editor, layout, "row", rowIndex)) {
-                    setAnnouncement(`Row ${rowIndex + 1} selected`);
+                    setAnnouncement(t("Row {rowIndex} selected", { rowIndex: rowIndex + 1 }));
                   }
                   if (canStartDrag && !(hasPinnedHeader && rowIndex === 0)) {
                     beginPointerDrag(event, "row", rowIndex);
@@ -1777,8 +1783,8 @@ export function TableControls({ editor }: { editor: Editor }) {
                   top: viewportValueToInterface(rect.bottom) - 8,
                   width: viewportValueToInterface(layout.tableRect.width),
                 }}
-                aria-label={`Resize row ${rowIndex + 1}`}
-                title="Resize row"
+                aria-label={t("Resize row {rowIndex}", { rowIndex: rowIndex + 1 })}
+                title={t("Resize row")}
                 onPointerDown={(event) => resizeRow(event, rowIndex)}
               />
             )}
@@ -1798,8 +1804,8 @@ export function TableControls({ editor }: { editor: Editor }) {
                   viewportValueToInterface(rect.left + rect.width / 2) - 14,
                 top: viewportValueToInterface(layout.tableRect.top) - 30,
               }}
-              aria-label={`Drag column ${columnIndex + 1}`}
-              title="Drag column; resize from the cell edge"
+              aria-label={t("Drag column {columnIndex}", { columnIndex: columnIndex + 1 })}
+              title={t("Drag column; resize from the cell edge")}
               onPointerDown={(event) => {
                 const canStartDrag =
                   editor.state.selection.empty ||
@@ -1807,7 +1813,7 @@ export function TableControls({ editor }: { editor: Editor }) {
                 if (
                   selectTableAxis(editor, layout, "column", columnIndex)
                 ) {
-                  setAnnouncement(`Column ${columnIndex + 1} selected`);
+                  setAnnouncement(t("Column {columnIndex} selected", { columnIndex: columnIndex + 1 }));
                 }
                 if (canStartDrag) {
                   beginPointerDrag(event, "column", columnIndex);
@@ -1830,8 +1836,8 @@ export function TableControls({ editor }: { editor: Editor }) {
             top: viewportValueToInterface(layout.tableRect.top),
             height: viewportValueToInterface(layout.tableRect.height),
           }}
-          aria-label={`Resize column ${columnResizeIndex + 1}`}
-          title="Resize column"
+          aria-label={t("Resize column {columnResizeIndex}", { columnResizeIndex: columnResizeIndex + 1 })}
+          title={t("Resize column")}
           onMouseDown={(mouseEvent) => {
             mouseEvent.preventDefault();
             mouseEvent.stopPropagation();
@@ -1854,8 +1860,8 @@ export function TableControls({ editor }: { editor: Editor }) {
                 ) - 32,
               top: viewportValueToInterface(layout.tableRect.bottom) + 4,
             }}
-            aria-label="Add row at bottom"
-            title="Add row"
+            aria-label={t("Add row at bottom")}
+            title={t("Add row")}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               if (resizeTableAtEnd(editor, layout.tablePos, "row", 1)) {
@@ -1875,8 +1881,8 @@ export function TableControls({ editor }: { editor: Editor }) {
                 ) + 4,
               top: viewportValueToInterface(layout.tableRect.bottom) + 4,
             }}
-            aria-label="Resize table rows"
-            title="Drag to add or remove rows"
+            aria-label={t("Resize table rows")}
+            title={t("Drag to add or remove rows")}
             onPointerDown={(event) => beginTableEdgeDrag(event, "row")}
           />
         </>
@@ -1895,8 +1901,8 @@ export function TableControls({ editor }: { editor: Editor }) {
                   layout.tableRect.top + layout.tableRect.height / 2,
                 ) - 32,
             }}
-            aria-label="Add column at right"
-            title="Add column"
+            aria-label={t("Add column at right")}
+            title={t("Add column")}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               if (resizeTableAtEnd(editor, layout.tablePos, "column", 1)) {
@@ -1916,8 +1922,8 @@ export function TableControls({ editor }: { editor: Editor }) {
                   layout.tableRect.top + layout.tableRect.height / 2,
                 ) + 4,
             }}
-            aria-label="Resize table columns"
-            title="Drag to add or remove columns"
+            aria-label={t("Resize table columns")}
+            title={t("Drag to add or remove columns")}
             onPointerDown={(event) => beginTableEdgeDrag(event, "column")}
           />
         </>

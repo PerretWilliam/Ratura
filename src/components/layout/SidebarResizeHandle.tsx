@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { cn } from "../../lib/utils";
 import { SIDEBAR_DEFAULT_PX, SIDEBAR_MIN_PX, SIDEBAR_MAX_PX } from "../../lib/sidebar";
+import { useT } from "../../i18n";
 
 /** Pointer movement below this many px counts as a click, not a drag. */
 const DRAG_THRESHOLD_PX = 3;
@@ -20,6 +21,7 @@ function applyWidthVar(px: number | null) {
  * Supports pointer drag to resize, keyboard arrow keys (Shift = large step), and double-click to reset width.
  */
 export function SidebarResizeHandle() {
+  const t = useT();
   const { sidebarWidthPx, setSidebarWidthPx, setSidebarWidthLive } = useTheme();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -160,7 +162,7 @@ export function SidebarResizeHandle() {
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize sidebar width"
+      aria-label={t("Resize sidebar width")}
       aria-valuenow={sidebarWidthPx ?? SIDEBAR_DEFAULT_PX}
       aria-valuemin={SIDEBAR_MIN_PX}
       aria-valuemax={SIDEBAR_MAX_PX}

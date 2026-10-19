@@ -11,6 +11,14 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getSettings, updateGlobalSettings } from "../services/notes";
+import {
+  I18nContext,
+  resolveLanguage,
+  setCurrentLanguage,
+  t as tNow,
+  translate,
+  type Translate,
+} from "../i18n";
 import { SIDEBAR_MIN_PX, SIDEBAR_MAX_PX } from "../lib/sidebar";
 import { resolveEditorWidthResizeEnabled } from "../lib/editorWidthResize";
 import { resolveEditorToolbarVisible } from "../lib/editorToolbar";
@@ -155,6 +163,9 @@ interface ThemeContextType {
   setPasteMode: (mode: PasteMode) => void;
   customCss: string;
   setCustomCss: (css: string) => void;
+  /** A language code, or "system" to follow the OS. */
+  language: string;
+  setLanguage: (language: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -239,6 +250,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [customColorsDark, setCustomColorsDarkState] = useState<CustomColors>({});
   const [pasteMode, setPasteModeState] = useState<PasteMode>("markdown");
   const [customCss, setCustomCssState] = useState("");
+  const [language, setLanguageState] = useState("system");
   const customCssSaveTimer = useRef<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const titleBarNoteInfoVisibilityRef = useRef<TitleBarNoteInfoVisibility>(
@@ -333,6 +345,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         setCustomColorsDarkState(settings.customColorsDark);
       }
       setCustomCssState(settings.customCss ?? "");
+      setLanguageState(settings.language ?? "system");
       if (
         settings.pasteMode === "markdown" ||
         settings.pasteMode === "plain" ||
@@ -521,7 +534,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       });
     } catch (error) {
       console.error("Failed to reset appearance settings:", error);
-      toast.error("Appearance settings could not be reset");
+      toast.error(tNow("Appearance settings could not be reset"));
       await loadSettingsFromBackend();
     }
   }, [applyTitleBarNoteInfoVisibility, loadSettingsFromBackend]);
@@ -619,7 +632,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       await updateGlobalSettings({ editorWidthResizeEnabled: enabled });
     } catch (error) {
       console.error("Failed to save editor width resize setting:", error);
-      toast.error("Appearance setting could not be saved");
+      toast.error(tNow("Appearance setting could not be saved"));
     }
   }, []);
 
@@ -629,7 +642,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       await updateGlobalSettings({ editorToolbarVisible: visible });
     } catch (error) {
       console.error("Failed to save editor toolbar setting:", error);
-      toast.error("Appearance setting could not be saved");
+      toast.error(tNow("Appearance setting could not be saved"));
     }
   }, []);
 
@@ -646,7 +659,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         titleBarFilenameVisible: next.filenameVisible,
       }).catch((error) => {
         console.error("Failed to update title bar note info:", error);
-        toast.error("Appearance setting could not be saved");
+        toast.error(tNow("Appearance setting could not be saved"));
       });
     },
     [applyTitleBarNoteInfoVisibility],
@@ -801,11 +814,26 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       updateGlobalSettings({ customCss: css.trim() ? css : null }).catch(
         (error) => {
           console.error("Failed to save custom CSS:", error);
-          toast.error("Custom CSS could not be saved");
+          toast.error(tNow("Custom CSS could not be saved"));
         },
       );
     }, 300);
   }, []);
+
+  const setLanguage = useCallback(async (next: string) => {
+    setLanguageState(next);
+    try {
+      await updateGlobalSettings({ language: next === "system" ? null : next });
+    } catch (error) {
+      console.error("Failed to save language:", error);
+    }
+  }, []);
+
+  const translator = useMemo<Translate>(() => {
+    const code = resolveLanguage(language);
+    setCurrentLanguage(code);
+    return (key, vars) => translate(code, key, vars);
+  }, [language]);
 
   // Live CSS variable update during drag (no persistence)
   const setEditorMaxWidthLive = useCallback((value: string) => {
@@ -861,6 +889,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       setPasteMode,
       customCss,
       setCustomCss,
+      language,
+      setLanguage,
     }),
     [
       theme,
@@ -904,6 +934,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       setPasteMode,
       customCss,
       setCustomCss,
+      language,
+      setLanguage,
     ],
   );
 
@@ -915,7 +947,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      {children}
+      <I18nContext.Provider value={translator}>{children}</I18nContext.Provider>
     </ThemeContext.Provider>
   );
 }

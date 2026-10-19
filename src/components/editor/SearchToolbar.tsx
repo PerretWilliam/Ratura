@@ -10,6 +10,7 @@ import {
   ReplaceAllIcon,
 } from "../icons";
 import { shift } from "../../lib/platform";
+import { useT } from "../../i18n";
 
 interface SearchToolbarProps {
   query: string;
@@ -45,6 +46,7 @@ export function SearchToolbar({
   isReplaceOpen,
   onToggleReplace,
 }: SearchToolbarProps) {
+  const t = useT();
   // Auto-focus input on mount
   useEffect(() => {
     const frame = requestAnimationFrame(() => inputRef.current?.focus());
@@ -109,7 +111,7 @@ export function SearchToolbar({
           type="text"
           value={query}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Find in note..."
+          placeholder={t("Find in note...")}
           className="flex-1 h-8 text-sm"
           onKeyDown={handleKeyDown}
         />
@@ -122,7 +124,7 @@ export function SearchToolbar({
           <IconButton
             onClick={onPrevious}
             disabled={totalMatches === 0}
-            title={`Previous match (${shift}↵)`}
+            title={t("Previous match ({shortcut})", { shortcut: `${shift}↵` })}
           >
             <ArrowUpIcon className="w-4.5 h-4.5 stroke-[1.5]" />
           </IconButton>
@@ -130,12 +132,12 @@ export function SearchToolbar({
           <IconButton
             onClick={onNext}
             disabled={totalMatches === 0}
-            title="Next match (↵)"
+            title={t("Next match (↵)")}
           >
             <ArrowDownIcon className="w-4.5 h-4.5 stroke-[1.5]" />
           </IconButton>
 
-          <IconButton onClick={onClose} title="Close (Esc)">
+          <IconButton onClick={onClose} title={t("Close (Esc)")}>
             <XIcon className="w-4.5 h-4.5 stroke-[1.5]" />
           </IconButton>
         </div>
@@ -148,7 +150,7 @@ export function SearchToolbar({
             type="text"
             value={replaceQuery}
             onChange={(e) => onReplaceChange(e.target.value)}
-            placeholder="Replace with..."
+            placeholder={t("Replace with...")}
             className="flex-1 h-8 text-sm"
             onKeyDown={handleReplaceKeyDown}
           />
@@ -157,7 +159,7 @@ export function SearchToolbar({
             <IconButton
               onClick={onReplace}
               disabled={totalMatches === 0}
-              title="Replace (↵)"
+              title={t("Replace (↵)")}
             >
               <ReplaceIcon className="w-4.5 h-4.5 stroke-[1.5]" />
             </IconButton>
@@ -165,7 +167,7 @@ export function SearchToolbar({
             <IconButton
               onClick={onReplaceAll}
               disabled={totalMatches === 0}
-              title="Replace All (Ctrl/Cmd+Enter)"
+              title={t("Replace All (Ctrl/Cmd+Enter)")}
             >
               <ReplaceAllIcon className="w-4.5 h-4.5 stroke-[1.5]" />
             </IconButton>

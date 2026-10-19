@@ -6,6 +6,7 @@ import {
   CheckIcon,
 } from "../icons";
 import { IconButton } from "../ui";
+import { useT } from "../../i18n";
 
 interface NoteSortMenuProps {
   sortOrder: NoteSortOrder;
@@ -19,13 +20,14 @@ export function NoteSortMenu({
   sortOrder,
   onChange,
 }: NoteSortMenuProps) {
+  const t = useT();
   const newestFirst = sortOrder === "newest";
 
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <IconButton
-          title={`Sort notes: ${newestFirst ? "Newest" : "Oldest"} first`}
+          title={newestFirst ? t("Sort notes: Newest first") : t("Sort notes: Oldest first")}
           tabIndex={0}
           className="active:scale-[0.96] motion-reduce:transform-none"
         >
@@ -43,7 +45,7 @@ export function NoteSortMenu({
           align="end"
         >
           <DropdownMenu.Label className="px-3 py-1 text-xs font-medium text-text-muted">
-            Sort notes
+            {t("Sort notes")}
           </DropdownMenu.Label>
           <DropdownMenu.RadioGroup
             value={sortOrder}
@@ -53,14 +55,14 @@ export function NoteSortMenu({
           >
             <DropdownMenu.RadioItem value="newest" className={radioItemClass}>
               <ArrowDownIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
-              Newest first
+              {t("Newest first")}
               <DropdownMenu.ItemIndicator className="absolute right-3 inline-flex items-center">
                 <CheckIcon className="h-3.5 w-3.5 stroke-[1.8]" />
               </DropdownMenu.ItemIndicator>
             </DropdownMenu.RadioItem>
             <DropdownMenu.RadioItem value="oldest" className={radioItemClass}>
               <ArrowUpIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
-              Oldest first
+              {t("Oldest first")}
               <DropdownMenu.ItemIndicator className="absolute right-3 inline-flex items-center">
                 <CheckIcon className="h-3.5 w-3.5 stroke-[1.8]" />
               </DropdownMenu.ItemIndicator>

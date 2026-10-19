@@ -176,6 +176,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
 } from "../icons";
+import { useT } from "../../i18n";
 
 function serializeSliceToMarkdown(
   editor: TiptapEditor | null,
@@ -446,6 +447,7 @@ function FormatBar({
   onAddBlockMath,
   onAddImage,
 }: FormatBarProps) {
+  const t = useT();
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
 
   if (!editor) return null;
@@ -455,28 +457,28 @@ function FormatBar({
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         isActive={editor.isActive("bold")}
-        title={`Bold (${mod}${isMac ? "" : "+"}B)`}
+        title={t("Bold ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}B` })}
       >
         <BoldIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleItalic().run()}
         isActive={editor.isActive("italic")}
-        title={`Italic (${mod}${isMac ? "" : "+"}I)`}
+        title={t("Italic ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}I` })}
       >
         <ItalicIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleStrike().run()}
         isActive={editor.isActive("strike")}
-        title={`Strikethrough (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}S)`}
+        title={t("Strikethrough ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}S` })}
       >
         <StrikethroughIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHighlight().run()}
         isActive={editor.isActive("highlight")}
-        title={`Highlight (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}H)`}
+        title={t("Highlight ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}H` })}
       >
         <HighlighterIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
@@ -486,28 +488,28 @@ function FormatBar({
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         isActive={editor.isActive("heading", { level: 1 })}
-        title={`Heading 1 (${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}1)`}
+        title={t("Heading 1 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}1` })}
       >
         <Heading1Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         isActive={editor.isActive("heading", { level: 2 })}
-        title={`Heading 2 (${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}2)`}
+        title={t("Heading 2 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}2` })}
       >
         <Heading2Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         isActive={editor.isActive("heading", { level: 3 })}
-        title={`Heading 3 (${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}3)`}
+        title={t("Heading 3 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}3` })}
       >
         <Heading3Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
         isActive={editor.isActive("heading", { level: 4 })}
-        title={`Heading 4 (${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}4)`}
+        title={t("Heading 4 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}4` })}
       >
         <Heading4Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
@@ -517,28 +519,28 @@ function FormatBar({
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         isActive={editor.isActive("bulletList")}
-        title={`Bullet List (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}8)`}
+        title={t("Bullet List ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}8` })}
       >
         <ListIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         isActive={editor.isActive("orderedList")}
-        title={`Numbered List (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}7)`}
+        title={t("Numbered List ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}7` })}
       >
         <ListOrderedIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleTaskList().run()}
         isActive={editor.isActive("taskList")}
-        title="Task List"
+        title={t("Task List")}
       >
         <CheckSquareIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         isActive={editor.isActive("blockquote")}
-        title={`Blockquote (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}B)`}
+        title={t("Blockquote ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}B` })}
       >
         <QuoteIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
@@ -551,7 +553,7 @@ function FormatBar({
               editor.chain().focus().wrapIn("alertBlockquote", { alertType }).run()
             }
             isActive={editor.isActive("alertBlockquote", { alertType })}
-            title={`Alert: ${label}`}
+            title={t("Alert: {label}", { label: t(label) })}
           >
             <span className="relative flex items-center justify-center">
               <QuoteIcon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -566,28 +568,28 @@ function FormatBar({
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleCode().run()}
         isActive={editor.isActive("code")}
-        title={`Inline Code (${mod}${isMac ? "" : "+"}E)`}
+        title={t("Inline Code ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}E` })}
       >
         <InlineCodeIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => toggleCodeBlockAtCursor(editor)}
         isActive={editor.isActive("codeBlock")}
-        title={`Code Block (${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}C)`}
+        title={t("Code Block ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}C` })}
       >
         <CodeIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={onAddBlockMath}
         isActive={editor.isActive("blockMath")}
-        title="Block Math"
+        title={t("Block Math")}
       >
         <BlockMathIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
         isActive={false}
-        title="Horizontal Rule"
+        title={t("Horizontal Rule")}
       >
         <SeparatorIcon />
       </ToolbarButton>
@@ -597,22 +599,22 @@ function FormatBar({
       <ToolbarButton
         onClick={onAddLink}
         isActive={editor.isActive("link")}
-        title={`Add Link (${mod}${isMac ? "" : "+"}K)`}
+        title={t("Add Link ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}K` })}
       >
         <LinkIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().insertContent("[[").run()}
         isActive={false}
-        title="Insert Wikilink"
+        title={t("Insert Wikilink")}
       >
         <BracketsIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
-      <ToolbarButton onClick={onAddImage} isActive={false} title="Add Image">
+      <ToolbarButton onClick={onAddImage} isActive={false} title={t("Add Image")}>
         <ImageIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <DropdownMenu.Root open={tableMenuOpen} onOpenChange={setTableMenuOpen}>
-        <Tooltip content="Insert Table">
+        <Tooltip content={t("Insert Table")}>
           <DropdownMenu.Trigger asChild>
             <ToolbarButton isActive={editor.isActive("table")}>
               <TableIcon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -776,6 +778,7 @@ export function Editor({
   saveToFolderDisabled,
   onPersistenceControllerReady,
 }: EditorProps) {
+  const t = useT();
   // Always call the hook (rules of hooks), but it returns null outside NotesProvider
   const notesCtx = useOptionalNotes();
 
@@ -1155,7 +1158,7 @@ export function Editor({
         } catch (error) {
           needsSaveRef.current = true;
           console.error("Failed to save note:", error);
-          toast.error("Failed to save note");
+          toast.error(t("Failed to save note"));
         }
       }
     }, AUTO_SAVE_DEBOUNCE_MS);
@@ -1414,7 +1417,7 @@ export function Editor({
         (latex: string) => {
           const trimmed = latex.trim();
           if (!trimmed) {
-            toast.error("Please enter a formula.");
+            toast.error(t("Please enter a formula."));
             return;
           }
 
@@ -1459,7 +1462,7 @@ export function Editor({
         (latex: string) => {
           const trimmed = latex.trim();
           if (!trimmed) {
-            toast.error("Please enter a formula.");
+            toast.error(t("Please enter a formula."));
             return;
           }
 
@@ -1573,7 +1576,7 @@ export function Editor({
       (latex: string) => {
         const normalizedLatex = latex.trim();
         if (!normalizedLatex) {
-          toast.error("Please enter a formula.");
+          toast.error(t("Please enter a formula."));
           return;
         }
 
@@ -1722,7 +1725,7 @@ export function Editor({
       (latex: string) => {
         const normalizedLatex = latex.trim();
         if (!normalizedLatex) {
-          toast.error("Please enter a formula.");
+          toast.error(t("Please enter a formula."));
           return;
         }
 
@@ -1760,7 +1763,7 @@ export function Editor({
         defaultLanguage: null,
       }),
       Placeholder.configure({
-        placeholder: "Start writing...",
+        placeholder: t("Start writing..."),
       }),
       Link.configure({
         openOnClick: false,
@@ -1945,12 +1948,12 @@ export function Editor({
                   .run();
               } catch (error) {
                 console.error("Failed to paste image:", error);
-                toast.error("Failed to paste image");
+                toast.error(t("Failed to paste image"));
               }
             };
             reader.onerror = () => {
               console.error("Failed to read clipboard image:", reader.error);
-              toast.error("Failed to read clipboard image");
+              toast.error(t("Failed to read clipboard image"));
             };
             reader.readAsDataURL(blob);
             return true; // Handled
@@ -1971,7 +1974,7 @@ export function Editor({
             parsedContent: null,
           })
         ) {
-          toast.error("A table can’t be pasted inside a table cell");
+          toast.error(t("A table can’t be pasted inside a table cell"));
           return true;
         }
 
@@ -2037,7 +2040,7 @@ export function Editor({
                   parsedContent: parsed,
                 })
               ) {
-                toast.error("A table can’t be pasted inside a table cell");
+                toast.error(t("A table can’t be pasted inside a table cell"));
                 return true;
               }
               currentEditor.commands.insertContent(parsed);
@@ -2226,20 +2229,20 @@ export function Editor({
               if (result.imported > 0) {
                 toast.success(
                   result.imported === 1
-                    ? "Image inserted"
-                    : `${result.imported} images inserted`,
+                    ? t("Image inserted")
+                    : t("Images inserted: {count}", { count: result.imported }),
                 );
               }
               if (result.failed > 0) {
                 toast.error(
                   result.failed === 1
-                    ? "Failed to insert one image"
-                    : `Failed to insert ${result.failed} images`,
+                    ? t("Failed to insert one image")
+                    : t("Images that could not be inserted: {count}", { count: result.failed }),
                 );
               }
             } catch (error) {
               console.error("Failed to handle dropped images:", error);
-              toast.error("Failed to insert dropped image");
+              toast.error(t("Failed to insert dropped image"));
             }
           },
         );
@@ -2394,7 +2397,7 @@ export function Editor({
           if (note) {
             notesCtxRef.current?.selectNote(note.id);
           } else {
-            toast.info(`Note "${noteTitle}" does not exist yet`);
+            toast.info(t("Note \"{noteTitle}\" does not exist yet", { noteTitle }));
           }
         }
         return;
@@ -2413,7 +2416,7 @@ export function Editor({
               console.error("Failed to open link:", error),
             );
           } else {
-            toast.error("Cannot open links with this URL scheme");
+            toast.error(t("Cannot open links with this URL scheme"));
           }
         }
       }
@@ -2463,7 +2466,7 @@ export function Editor({
     ) {
       void flushAllPendingSavesRef.current().catch((error) => {
         console.error("Failed to save before switching notes:", error);
-        toast.error("Failed to save before switching notes");
+        toast.error(t("Failed to save before switching notes"));
       });
     }
     // Reset source mode when genuinely switching notes (renames return early above)
@@ -2823,7 +2826,7 @@ export function Editor({
       multiple: false,
       filters: [
         {
-          name: "Images",
+          name: t("Images"),
           extensions: ["png", "jpg", "jpeg", "gif", "webp", "svg"],
         },
       ],
@@ -2988,10 +2991,10 @@ export function Editor({
     try {
       const markdown = getMarkdown(editor);
       await invoke("copy_to_clipboard", { text: markdown });
-      toast.success("Copied as Markdown");
+      toast.success(t("Copied as Markdown"));
     } catch (error) {
       console.error("Failed to copy markdown:", error);
-      toast.error("Failed to copy");
+      toast.error(t("Failed to copy"));
     }
   }, [editor, getMarkdown]);
 
@@ -3001,10 +3004,10 @@ export function Editor({
       const markdown = getMarkdown(editor);
       const plainText = plainTextFromMarkdown(markdown);
       await invoke("copy_to_clipboard", { text: plainText });
-      toast.success("Copied as plain text");
+      toast.success(t("Copied as plain text"));
     } catch (error) {
       console.error("Failed to copy plain text:", error);
-      toast.error("Failed to copy");
+      toast.error(t("Failed to copy"));
     }
   }, [editor, getMarkdown]);
 
@@ -3013,10 +3016,10 @@ export function Editor({
     try {
       const html = editor.getHTML();
       await invoke("copy_to_clipboard", { text: html });
-      toast.success("Copied as HTML");
+      toast.success(t("Copied as HTML"));
     } catch (error) {
       console.error("Failed to copy HTML:", error);
-      toast.error("Failed to copy");
+      toast.error(t("Failed to copy"));
     }
   }, [editor]);
 
@@ -3027,7 +3030,7 @@ export function Editor({
       await downloadPdf(editor, currentNote.title);
     } catch (error) {
       console.error("Failed to open print dialog:", error);
-      toast.error("Failed to open print dialog");
+      toast.error(t("Failed to open print dialog"));
     }
   }, [editor, currentNote]);
 
@@ -3044,11 +3047,11 @@ export function Editor({
       const markdown = getMarkdown(editor);
       const saved = await downloadMarkdown(markdown, currentNote.title);
       if (saved) {
-        toast.success("Markdown saved successfully");
+        toast.success(t("Markdown saved successfully"));
       }
     } catch (error) {
       console.error("Failed to download markdown:", error);
-      toast.error("Failed to save markdown");
+      toast.error(t("Failed to save markdown"));
     }
   }, [editor, currentNote, getMarkdown]);
 
@@ -3247,7 +3250,7 @@ export function Editor({
             }
           } catch (error) {
             console.error("Failed to save note:", error);
-            toast.error("Failed to save note");
+            toast.error(t("Failed to save note"));
           } finally {
             setIsSaving(false);
           }
@@ -3306,7 +3309,7 @@ export function Editor({
           <div className="text-center text-text-muted select-none">
             <div
               role="img"
-              aria-label="Note"
+              aria-label={t("Note")}
               className="w-42 aspect-square mx-auto mb-1"
               style={{
                 backgroundColor: "var(--color-text)",
@@ -3321,10 +3324,10 @@ export function Editor({
               }}
             />
             <h1 className="text-2xl text-text font-serif mb-1 tracking-[-0.01em] ">
-              What's on your mind?
+              {t("What's on your mind?")}
             </h1>
             <p className="text-sm">
-              Pick up where you left off, or start something new
+              {t("Pick up where you left off, or start something new")}
             </p>
             {createNote && (
               <Button
@@ -3364,8 +3367,8 @@ export function Editor({
               onClick={onToggleSidebar}
               title={
                 isSidebarActive
-                  ? `Hide sidebar (${mod}${isMac ? "" : "+"}\\)`
-                  : `Show sidebar (${mod}${isMac ? "" : "+"}\\)`
+                  ? t("Hide sidebar ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}\\` })
+                  : t("Show sidebar ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}\\` })
               }
               className="shrink-0"
             >
@@ -3375,7 +3378,7 @@ export function Editor({
           {goBack && (
             <IconButton
               onClick={goBack}
-              title={`Navigate back (${mod}${isMac ? "" : "+"}[)`}
+              title={t("Navigate back ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}[` })}
               className="shrink-0"
               disabled={!canGoBack}
             >
@@ -3385,7 +3388,7 @@ export function Editor({
           {goForward && (
             <IconButton
               onClick={goForward}
-              title={`Navigate forward (${mod}${isMac ? "" : "+"}])`}
+              title={t("Navigate forward ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}]` })}
               className="shrink-0"
               disabled={!canGoForward}
             >
@@ -3403,13 +3406,13 @@ export function Editor({
         >
           {hasSaveConflict && resolveNoteConflict ? (
             <DropdownMenu.Root>
-              <Tooltip content="Save conflict — local draft preserved; choose which version to keep">
+              <Tooltip content={t("Save conflict — local draft preserved; choose which version to keep")}>
                 <DropdownMenu.Trigger asChild>
                   <button
                     className="h-7 px-2 flex items-center gap-1 text-xs text-text-muted hover:bg-bg-emphasis rounded font-medium"
                   >
                     <RefreshCwIcon className="w-4 h-4 stroke-[1.6]" />
-                    <span>Resolve Conflict</span>
+                    <span>{t("Resolve Conflict")}</span>
                   </button>
                 </DropdownMenu.Trigger>
               </Tooltip>
@@ -3422,49 +3425,49 @@ export function Editor({
                     className="px-2 py-1.5 text-sm rounded outline-none cursor-pointer hover:bg-bg-emphasis focus:bg-bg-emphasis"
                     onSelect={() => {
                       void resolveNoteConflict("keepLocal").catch((error) => {
-                        toast.error(`Conflict remains: ${error}`);
+                        toast.error(t("Conflict remains: {error}", { error: String(error) }));
                       });
                     }}
                   >
-                    Keep My Changes
+                    {t("Keep My Changes")}
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     className="px-2 py-1.5 text-sm rounded outline-none cursor-pointer hover:bg-bg-emphasis focus:bg-bg-emphasis"
                     onSelect={() => {
                       void resolveNoteConflict("useRemote").catch((error) => {
-                        toast.error(`Conflict remains: ${error}`);
+                        toast.error(t("Conflict remains: {error}", { error: String(error) }));
                       });
                     }}
                   >
-                    Use Version on Disk
+                    {t("Use Version on Disk")}
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator className="h-px bg-border my-1" />
                   <div className="px-2 py-1 text-[11px] text-text-muted max-w-56">
-                    A recovery copy is created before either action.
+                    {t("A recovery copy is created before either action.")}
                   </div>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
           ) : hasExternalChanges ? (
             <Tooltip
-              content={`External changes detected (${mod}${isMac ? "" : "+"}R to refresh)`}
+              content={t("External changes detected ({shortcut} to refresh)", { shortcut: `${mod}${isMac ? "" : "+"}R` })}
             >
               <button
                 onClick={reloadCurrentNote}
                 className="h-7 px-2 flex items-center gap-1 text-xs text-text-muted hover:bg-bg-emphasis rounded transition-colors font-medium"
               >
                 <RefreshCwIcon className="w-4 h-4 stroke-[1.6]" />
-                <span>Refresh</span>
+                <span>{t("Refresh")}</span>
               </button>
             </Tooltip>
           ) : isSaving ? (
-            <Tooltip content="Saving...">
+            <Tooltip content={t("Saving...")}>
               <div className="h-7 w-7 flex items-center justify-center">
                 <SpinnerIcon className="w-4.5 h-4.5 text-text-muted/40 stroke-[1.5] animate-spin" />
               </div>
             </Tooltip>
           ) : isDirty ? (
-            <Tooltip content="Unsaved changes">
+            <Tooltip content={t("Unsaved changes")}>
               <div
                 role="status"
                 className="h-7 w-7 flex items-center justify-center"
@@ -3473,24 +3476,24 @@ export function Editor({
               </div>
             </Tooltip>
           ) : (
-            <Tooltip content="All changes saved">
+            <Tooltip content={t("All changes saved")}>
               <div className="h-7 w-7 flex items-center justify-center rounded-full">
                 <CircleCheckIcon className="w-4.5 h-4.5 mt-px stroke-[1.5] text-text-muted/40" />
               </div>
             </Tooltip>
           )}
           {currentNote && pinNote && unpinNote && (
-            <Tooltip content={isPinned ? "Unpin note" : "Pin note"}>
+            <Tooltip content={isPinned ? t("Unpin note") : t("Pin note")}>
               <IconButton
                 onClick={async () => {
                   if (!currentNote) return;
                   try {
                     if (isPinned) {
                       await unpinNote(currentNote.id);
-                      toast.success("Note unpinned");
+                      toast.success(t("Note unpinned"));
                     } else {
                       await pinNote(currentNote.id);
-                      toast.success("Note pinned");
+                      toast.success(t("Note pinned"));
                     }
                     // Reload settings to update isPinned state
                     const updatedSettings = await notesService.getSettings();
@@ -3498,9 +3501,7 @@ export function Editor({
                   } catch (error) {
                     console.error("Failed to pin/unpin note:", error);
                     toast.error(
-                      `Failed to ${isPinned ? "unpin" : "pin"} note: ${
-                        error instanceof Error ? error.message : "Unknown error"
-                      }`,
+                      (isPinned ? t("Failed to unpin note: {error}", { error: String(error) }) : t("Failed to pin note: {error}", { error: String(error) })),
                     );
                   }
                 }}
@@ -3515,7 +3516,7 @@ export function Editor({
             </Tooltip>
           )}
           {currentNote && (
-            <Tooltip content={`Find in note (${mod}${isMac ? "" : "+"}F)`}>
+            <Tooltip content={t("Find in note ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}F` })}>
               <IconButton onClick={openEditorSearch}>
                 <SearchIcon className="w-4.25 h-4.25 stroke-[1.6]" />
               </IconButton>
@@ -3525,8 +3526,8 @@ export function Editor({
             <Tooltip
               content={
                 sourceMode
-                  ? `View Formatted (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}M)`
-                  : `View Markdown Source (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}M)`
+                  ? t("View Formatted ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}M` })
+                  : t("View Markdown Source ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}M` })
               }
             >
               <IconButton onClick={toggleSourceMode}>
@@ -3540,7 +3541,7 @@ export function Editor({
           )}
           <DropdownMenu.Root open={copyMenuOpen} onOpenChange={setCopyMenuOpen}>
             <Tooltip
-              content={`Export (${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}C)`}
+              content={t("Export ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}C` })}
             >
               <DropdownMenu.Trigger asChild>
                 <IconButton>
@@ -3569,21 +3570,21 @@ export function Editor({
                   onSelect={handleCopyMarkdown}
                 >
                   <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-                  Copy Markdown
+                  {t("Copy Markdown")}
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   className="px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2"
                   onSelect={handleCopyPlainText}
                 >
                   <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-                  Copy Plain Text
+                  {t("Copy Plain Text")}
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   className="px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2"
                   onSelect={handleCopyHtml}
                 >
                   <CopyIcon className="w-4 h-4 stroke-[1.6]" />
-                  Copy HTML
+                  {t("Copy HTML")}
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator className="h-px bg-border my-1" />
                 <DropdownMenu.Item
@@ -3591,23 +3592,23 @@ export function Editor({
                   onSelect={handleDownloadPdf}
                 >
                   <DownloadIcon className="w-4 h-4 stroke-[1.6]" />
-                  Print as PDF
+                  {t("Print as PDF")}
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   className="px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2"
                   onSelect={handleDownloadMarkdown}
                 >
                   <DownloadIcon className="w-4 h-4 stroke-[1.6]" />
-                  Export Markdown
+                  {t("Export Markdown")}
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
           {onSaveToFolder && (
-            <Tooltip content="Save in Folder">
+            <Tooltip content={t("Save in Folder")}>
               <IconButton
                 onClick={onSaveToFolder}
-                aria-label="Save in Folder"
+                aria-label={t("Save in Folder")}
                 disabled={saveToFolderDisabled}
               >
                 {saveToFolderDisabled ? (
@@ -3739,7 +3740,7 @@ export function Editor({
                       image.currentSrc || image.getAttribute("src") || "",
                     );
                     if (!openTarget) {
-                      toast.error("This image cannot be opened");
+                      toast.error(t("This image cannot be opened"));
                       return;
                     }
 
@@ -3747,19 +3748,19 @@ export function Editor({
                       const menu = await Menu.new({
                         items: [
                           await MenuItem.new({
-                            text: "Open Image",
+                            text: t("Open Image"),
                             action: () => {
                               if (openTarget.kind === "local-asset") {
                                 void invoke("open_editor_image", {
                                   source: openTarget.source,
                                 }).catch((error) => {
                                   console.error("Failed to open image:", error);
-                                  toast.error("Failed to open image");
+                                  toast.error(t("Failed to open image"));
                                 });
                               } else {
                                 void openUrl(openTarget.value).catch((error) => {
                                   console.error("Failed to open image:", error);
-                                  toast.error("Failed to open image");
+                                  toast.error(t("Failed to open image"));
                                 });
                               }
                             },
@@ -3769,7 +3770,7 @@ export function Editor({
                       await menu.popup();
                     } catch (error) {
                       console.error("Image context menu error:", error);
-                      toast.error("Failed to open image menu");
+                      toast.error(t("Failed to open image menu"));
                     }
                     return;
                   }
@@ -3862,7 +3863,7 @@ export function Editor({
                     if (!isFirstColumn) {
                       menuItems.push(
                         await MenuItem.new({
-                          text: "Add Column Before",
+                          text: t("Add Column Before"),
                           action: () =>
                             editor.chain().focus().addColumnBefore().run(),
                         }),
@@ -3870,7 +3871,7 @@ export function Editor({
                     }
                     menuItems.push(
                       await MenuItem.new({
-                        text: "Add Column After",
+                        text: t("Add Column After"),
                         action: () =>
                           editor.chain().focus().addColumnAfter().run(),
                       }),
@@ -3878,7 +3879,7 @@ export function Editor({
                     if (rowNode.childCount > 1) {
                       menuItems.push(
                         await MenuItem.new({
-                          text: "Delete Column",
+                          text: t("Delete Column"),
                           action: () =>
                             editor.chain().focus().deleteColumn().run(),
                         }),
@@ -3892,7 +3893,7 @@ export function Editor({
                     if (!isFirstRow) {
                       menuItems.push(
                         await MenuItem.new({
-                          text: "Add Row Above",
+                          text: t("Add Row Above"),
                           action: () =>
                             editor.chain().focus().addRowBefore().run(),
                         }),
@@ -3900,7 +3901,7 @@ export function Editor({
                     }
                     menuItems.push(
                       await MenuItem.new({
-                        text: "Add Row Below",
+                        text: t("Add Row Below"),
                         action: () =>
                           editor.chain().focus().addRowAfter().run(),
                       }),
@@ -3908,7 +3909,7 @@ export function Editor({
                     if (tableNode.childCount > 1) {
                       menuItems.push(
                         await MenuItem.new({
-                          text: "Delete Row",
+                          text: t("Delete Row"),
                           action: () =>
                             editor.chain().focus().deleteRow().run(),
                         }),
@@ -3919,14 +3920,14 @@ export function Editor({
                     );
                     menuItems.push(
                       await MenuItem.new({
-                        text: "Toggle Header Row",
+                        text: t("Toggle Header Row"),
                         action: () =>
                           editor.chain().focus().toggleHeaderRow().run(),
                       }),
                     );
                     menuItems.push(
                       await MenuItem.new({
-                        text: "Toggle Header Column",
+                        text: t("Toggle Header Column"),
                         action: () =>
                           editor.chain().focus().toggleHeaderColumn().run(),
                       }),
@@ -3936,7 +3937,7 @@ export function Editor({
                     );
                     menuItems.push(
                       await MenuItem.new({
-                        text: "Delete Table",
+                        text: t("Delete Table"),
                         action: () =>
                           editor.chain().focus().deleteTable().run(),
                       }),

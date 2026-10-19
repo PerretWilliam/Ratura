@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import { XIcon } from "../icons";
 import { shortcutCategories } from "../../lib/shortcuts";
+import { useT } from "../../i18n";
 
 const modalCategories = shortcutCategories.filter(
   (c) => c.title !== "Settings",
@@ -44,6 +45,7 @@ export function KeyboardShortcutsModal({
   open,
   onClose,
 }: KeyboardShortcutsModalProps) {
+  const t = useT();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -112,11 +114,11 @@ export function KeyboardShortcutsModal({
             id="keyboard-shortcuts-title"
             className="text-lg font-medium text-text"
           >
-            Shortcuts
+            {t("Shortcuts")}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="p-1 rounded-md text-text-muted hover:text-text hover:bg-bg-muted transition-colors"
           >
             <XIcon className="w-4.5 h-4.5" />
@@ -128,13 +130,13 @@ export function KeyboardShortcutsModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             {modalCategories.map((category) => (
               <div key={category.title}>
-                <h3 className="font-medium text-text mb-3">{category.title}</h3>
+                <h3 className="font-medium text-text mb-3">{t(category.title)}</h3>
                 <div className="space-y-0.5">
                   {category.shortcuts.map((shortcut) => (
                     <ShortcutRow
                       key={shortcut.description}
                       keys={shortcut.keys}
-                      description={shortcut.description}
+                      description={t(shortcut.description)}
                     />
                   ))}
                 </div>
