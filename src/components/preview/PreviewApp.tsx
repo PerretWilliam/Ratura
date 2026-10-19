@@ -32,11 +32,13 @@ import {
   openPreferencesWindow,
 } from "../../services/windowLifecycle";
 import { useWindowShortcuts } from "../../lib/useWindowShortcuts";
+import { useT } from "../../i18n";
 
 interface PreviewAppProps {
   filePath: string;
 }
 export function PreviewApp({ filePath }: PreviewAppProps) {
+  const t = useT();
   useWindowShortcuts({ onOpenPreferences: openPreferencesWindow });
   const [content, setContent] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -99,14 +101,14 @@ export function PreviewApp({ filePath }: PreviewAppProps) {
           closeInProgressRef.current = false;
           if (!disposed) {
             toast.error(
-              `Window kept open because the draft could not be saved: ${error}`,
+              t("Window kept open because the draft could not be saved: {error}", { error: String(error) }),
             );
           }
         });
       }),
       (error) => {
         if (!disposed) {
-          toast.error(`Safe window-close protection could not start: ${error}`);
+          toast.error(t("Safe window-close protection could not start: {error}", { error: String(error) }));
         }
       },
     ).then((removeListener) => {
@@ -161,13 +163,13 @@ export function PreviewApp({ filePath }: PreviewAppProps) {
           if (isStale()) return;
           setHasSaveConflict(true);
           if (isStale()) return;
-          toast.warning("Recovered an unsaved draft from an interrupted session");
+          toast.warning(t("Recovered an unsaved draft from an interrupted session"));
         }
       })
       .catch((error) => {
         if (isStale()) return;
         console.error("Failed to load file:", error);
-        toast.error(`Failed to load file: ${error}`);
+        toast.error(t("Failed to load file: {error}", { error: String(error) }));
       });
     return () => {
       cancelled = true;
@@ -220,7 +222,7 @@ export function PreviewApp({ filePath }: PreviewAppProps) {
           setHasSaveConflict(false);
         } catch (error) {
           console.error("Failed to save file:", error);
-          toast.error(`Failed to save: ${error}`);
+          toast.error(t("Failed to save: {error}", { error: String(error) }));
           throw error;
         }
       }),
@@ -245,7 +247,7 @@ export function PreviewApp({ filePath }: PreviewAppProps) {
     } catch (error) {
       if (!isLatest()) return;
       console.error("Failed to reload file:", error);
-      toast.error(`Failed to reload: ${error}`);
+      toast.error(t("Failed to reload: {error}", { error: String(error) }));
     }
   }, [filePath]);
 
@@ -410,7 +412,7 @@ export function PreviewApp({ filePath }: PreviewAppProps) {
       await getCurrentWindow().close();
     } catch (error) {
       console.error("Failed to save to folder:", error);
-      toast.error(`Failed to save to folder: ${error}`);
+      toast.error(t("Failed to save to folder: {error}", { error: String(error) }));
     } finally {
       savingRef.current = false;
       setIsSaving(false);

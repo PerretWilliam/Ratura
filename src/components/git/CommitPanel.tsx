@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { useGit } from "../../context/GitContext";
 import { Button, Textarea } from "../ui";
+import { useT } from "../../i18n";
 
 const DEFAULT_COMMIT_MESSAGE = "Quick Commit from Ratura";
 
@@ -18,6 +19,7 @@ interface CommitPanelProps {
 }
 
 export function CommitPanel({ open, onClose }: CommitPanelProps) {
+  const t = useT();
   const { commit, isCommitting } = useGit();
 
   const [message, setMessage] = useState(DEFAULT_COMMIT_MESSAGE);
@@ -50,13 +52,13 @@ export function CommitPanel({ open, onClose }: CommitPanelProps) {
       const success = await commit(commitMessage);
 
       if (success) {
-        toast.success("Changes committed");
+        toast.success(t("Changes committed"));
         onClose();
       } else {
-        toast.error("Failed to commit");
+        toast.error(t("Failed to commit"));
       }
     } catch {
-      toast.error("Failed to commit");
+      toast.error(t("Failed to commit"));
     }
   }, [commit, isCommitting, message, onClose]);
 
@@ -83,10 +85,10 @@ export function CommitPanel({ open, onClose }: CommitPanelProps) {
   return (
     <div className="border-t border-border bg-bg-secondary px-3 py-3">
       <div className="mb-2">
-        <h3 className="text-sm font-medium text-text">Commit Changes</h3>
+        <h3 className="text-sm font-medium text-text">{t("Commit Changes")}</h3>
 
         <p className="mt-1 text-xs text-text-muted">
-          Enter to commit • Shift+Enter for newline
+          {t("Enter to commit • Shift+Enter for newline")}
         </p>
       </div>
 
@@ -96,13 +98,13 @@ export function CommitPanel({ open, onClose }: CommitPanelProps) {
         onChange={(event) => setMessage(event.target.value)}
         onKeyDown={handleKeyDown}
         rows={4}
-        placeholder="Commit message"
+        placeholder={t("Commit message")}
         className="min-h-24"
       />
 
       <div className="mt-3 flex items-center justify-end gap-2">
         <Button variant="ghost" onClick={onClose} disabled={isCommitting}>
-          Cancel
+          {t("Cancel")}
         </Button>
 
         <Button

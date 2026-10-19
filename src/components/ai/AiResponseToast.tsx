@@ -2,6 +2,7 @@ import { ClaudeIcon, CodexIcon, OpenCodeIcon, OllamaIcon } from "../icons";
 import { mod } from "../../lib/platform";
 import type { AiProvider } from "../../services/ai";
 import { CodeCopyButton } from "../ui";
+import { useT } from "../../i18n";
 
 interface AiResponseToastProps {
   output: string;
@@ -217,6 +218,7 @@ function parseInlineMarkdown(text: string): React.ReactNode {
 }
 
 export function AiResponseToast({ output, provider }: AiResponseToastProps) {
+  const t = useT();
   const Icon =
     provider === "codex"
       ? CodexIcon
@@ -230,7 +232,7 @@ export function AiResponseToast({ output, provider }: AiResponseToastProps) {
     <div className="flex gap-3 items-start">
       <Icon className="w-4.5 h-4.5 shrink-0 mt-px" />
       <div className="flex-1 space-y-2 min-w-0">
-        <div className="font-medium text-sm">AI Edit Complete</div>
+        <div className="font-medium text-sm">{t("AI Edit Complete")}</div>
         <div className="text-text-muted max-h-60 overflow-y-auto pr-2">
           {parseMarkdown(output)}
         </div>

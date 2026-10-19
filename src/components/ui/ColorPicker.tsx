@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { RgbaColorPicker } from "react-colorful";
 import { cn } from "../../lib/utils";
+import { useT } from "../../i18n";
 
 interface RgbaColor {
   r: number;
@@ -97,6 +98,7 @@ export function ColorPicker({
   onChange,
   onReset,
 }: ColorPickerProps) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [hexDraft, setHexDraft] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -169,7 +171,7 @@ export function ColorPicker({
           isOpen ? "border-accent" : "border-border hover:border-text-muted",
         )}
         style={{ backgroundColor: color }}
-        aria-label="Pick color"
+        aria-label={t("Pick color")}
       />
       {isOpen && (
         <div
@@ -213,7 +215,7 @@ export function ColorPicker({
               }}
               className="text-xs text-text-muted hover:text-text transition-colors cursor-pointer text-left"
             >
-              Reset to default
+              {t("Reset to default")}
             </button>
           )}
         </div>

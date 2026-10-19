@@ -14,6 +14,7 @@ import { ShortcutsSettingsSection } from "./ShortcutsSettingsSection";
 import { AboutSettingsSection } from "./AboutSettingsSection";
 import { ToolsSettingsSection } from "./ToolsSettingsSection";
 import { mod, isMac, isWindows } from "../../lib/platform";
+import { msg, useT, type Message } from "../../i18n";
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -22,18 +23,19 @@ type SettingsTab = "general" | "tools" | "editor" | "shortcuts" | "about";
 
 const tabs: {
   id: SettingsTab;
-  label: string;
+  label: Message;
   icon: typeof FolderIcon;
   shortcut: string;
 }[] = [
-  { id: "general", label: "Folder", icon: FolderIcon, shortcut: "1" },
-  { id: "tools", label: "Integrations", icon: IntegrationsIcon, shortcut: "2" },
-  { id: "editor", label: "Appearance", icon: SwatchIcon, shortcut: "3" },
-  { id: "shortcuts", label: "Shortcuts", icon: KeyboardIcon, shortcut: "4" },
-  { id: "about", label: "About", icon: InfoIcon, shortcut: "5" },
+  { id: "general", label: msg("General"), icon: FolderIcon, shortcut: "1" },
+  { id: "tools", label: msg("Integrations"), icon: IntegrationsIcon, shortcut: "2" },
+  { id: "editor", label: msg("Appearance"), icon: SwatchIcon, shortcut: "3" },
+  { id: "shortcuts", label: msg("Shortcuts"), icon: KeyboardIcon, shortcut: "4" },
+  { id: "about", label: msg("About"), icon: InfoIcon, shortcut: "5" },
 ];
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -84,12 +86,12 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             {onBack && (
               <IconButton
                 onClick={onBack}
-                title={`Back (${mod}${isMac ? "" : "+"},)`}
+                title={t("Back ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"},` })}
               >
                 <ArrowLeftIcon className="w-4.5 h-4.5 stroke-[1.5]" />
               </IconButton>
             )}
-            <div className="font-medium text-base">Settings</div>
+            <div className="font-medium text-base">{t("Settings")}</div>
           </div>
         </div>
 
@@ -108,7 +110,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className="w-4.5 h-4.5 stroke-[1.5]" />
-                  {tab.label}
+                  {t(tab.label)}
                 </div>
                 <div className="text-xs text-text-muted">
                   <span className="mr-0.5">{mod}</span>

@@ -10,6 +10,7 @@ import {
 import * as aiService from "../../services/ai";
 import type { AiProvider } from "../../services/ai";
 import type { Settings } from "../../types/note";
+import { useT } from "../../i18n";
 
 interface AiEditModalProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function AiEditModal({
   onExecute,
   isExecuting,
 }: AiEditModalProps) {
+  const t = useT();
   const [prompt, setPrompt] = useState("");
   const [cliInstalled, setCliInstalled] = useState<boolean | null>(null);
   const [ollamaModel, setOllamaModel] = useState<string>(
@@ -223,7 +225,7 @@ export function AiEditModal({
               <div className="w-full flex justify-between">
                 <div className="flex items-center gap-1.5 text-sm text-text-muted">
                   <kbd className="text-xs px-1.5 py-0.5 rounded-md bg-bg-muted text-text-muted">
-                    Esc
+                    {t("Esc")}
                   </kbd>
                   <span>to go back</span>
                 </div>
@@ -240,7 +242,7 @@ export function AiEditModal({
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-text-muted shrink-0">
-                      Ollama model:
+                      {t("Ollama model:")}
                     </span>
                     <input
                       ref={modelInputRef}
@@ -259,7 +261,7 @@ export function AiEditModal({
                 </div>
               )}
               <div className="text-sm space-y-1 p-3 bg-bg-muted rounded-md">
-                <span className="font-medium text-text">How does it work?</span>{" "}
+                <span className="font-medium text-text">{t("How does it work?")}</span>{" "}
                 <span className="text-text-muted">
                   {providerName} will edit the current note directly using your
                   local {cliName}. You'll be able to undo changes.
@@ -269,13 +271,13 @@ export function AiEditModal({
               <div className="w-full flex justify-between">
                 <div className="flex items-center gap-1.5 text-sm text-text-muted">
                   <kbd className="text-xs px-1.5 py-0.5 rounded-md bg-bg-muted text-text-muted">
-                    Esc
+                    {t("Esc")}
                   </kbd>
                   <span>to go back</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm text-text-muted">
                   <kbd className="text-xs px-1.5 py-0.5 rounded-md bg-bg-muted text-text-muted">
-                    Enter
+                    {t("Enter")}
                   </kbd>
                   <span>to submit</span>
                 </div>

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { CheckIcon, XIcon, LinkOffIcon } from "../icons";
 import { Input, IconButton } from "../ui";
+import { useT } from "../../i18n";
 
 export interface LinkEditorProps {
   initialUrl: string;
@@ -17,6 +18,7 @@ export const LinkEditor = ({
   onRemove,
   onCancel,
 }: LinkEditorProps) => {
+  const t = useT();
   const hasExistingLink = !!initialUrl;
   const needsText = initialText !== undefined; // Show text input if initialText is provided
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +75,7 @@ export const LinkEditor = ({
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Link text..."
+            placeholder={t("Link text...")}
             className="w-70 h-9"
             onKeyDown={handleKeyDown}
             tabIndex={0}
@@ -84,7 +86,7 @@ export const LinkEditor = ({
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter URL..."
+          placeholder={t("Enter URL...")}
           className={needsText ? "w-70 h-9" : "w-55 h-9"}
           onKeyDown={handleKeyDown}
           tabIndex={0}
@@ -98,7 +100,7 @@ export const LinkEditor = ({
         <IconButton
           type="button"
           onClick={handleSubmit}
-          title="Apply"
+          title={t("Apply")}
           size="xs"
           variant="ghost"
         >
@@ -108,7 +110,7 @@ export const LinkEditor = ({
           <IconButton
             type="button"
             onClick={onRemove}
-            title="Remove link"
+            title={t("Remove link")}
             size="xs"
             variant="ghost"
           >
@@ -118,7 +120,7 @@ export const LinkEditor = ({
         <IconButton
           type="button"
           onClick={onCancel}
-          title="Cancel"
+          title={t("Cancel")}
           size="xs"
           variant="ghost"
         >

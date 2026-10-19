@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "../ui";
 import { Input } from "../ui";
+import { useT } from "../../i18n";
 
 interface FolderNameDialogProps {
   open: boolean;
@@ -25,11 +26,15 @@ export function FolderNameDialog({
   open,
   onOpenChange,
   onConfirm,
-  title = "Create New Folder",
-  description = "Enter a name for your new folder",
-  confirmLabel = "Create",
+  title,
+  description,
+  confirmLabel,
   defaultValue = "",
 }: FolderNameDialogProps) {
+  const t = useT();
+  title ??= t("Create New Folder");
+  description ??= t("Enter a name for your new folder");
+  confirmLabel ??= t("Create");
   const [name, setName] = useState(defaultValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -73,11 +78,11 @@ export function FolderNameDialog({
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Folder name"
+          placeholder={t("Folder name")}
           className="mt-1"
         />
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={handleConfirm} disabled={!name.trim()}>
             {confirmLabel}
           </AlertDialogAction>

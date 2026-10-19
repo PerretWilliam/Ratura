@@ -107,6 +107,10 @@ export async function moveNote(id: string, targetFolder: string): Promise<string
   return invoke("move_note", { id, targetFolder });
 }
 
+export async function renameNote(id: string, newName: string): Promise<string> {
+  return invoke("rename_note", { id, newName });
+}
+
 export async function moveFolder(path: string, targetParent: string): Promise<void> {
   return invoke("move_folder", { path, targetParent });
 }

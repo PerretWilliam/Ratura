@@ -13,6 +13,7 @@ import {
   MinusIcon,
   MoreVerticalIcon,
 } from "../icons";
+import { useT } from "../../i18n";
 
 interface WorkspaceMenuProps {
   workspaces: WorkspaceInfo[];
@@ -29,6 +30,7 @@ export function WorkspaceMenu({
   onAddWorkspace,
   onRemoveWorkspace,
 }: WorkspaceMenuProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [actionMenuPath, setActionMenuPath] = useState<string | null>(null);
   const rootRef = useRef<HTMLElement>(null);
@@ -145,7 +147,7 @@ export function WorkspaceMenu({
         <button
           ref={triggerRef}
           type="button"
-          aria-label="Switch workspace"
+          aria-label={t("Switch workspace")}
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => {
@@ -167,13 +169,13 @@ export function WorkspaceMenu({
         <div
           ref={menuRef}
           role="menu"
-          aria-label="Workspaces"
+          aria-label={t("Workspaces")}
           onKeyDown={handleMenuKeyDown}
           className="absolute left-2 right-2 top-full z-50 mt-1 rounded-xl border border-border bg-bg p-1.5 shadow-xl"
         >
           {workspaces.length === 0 ? (
             <div className="px-2.5 py-3 text-xs text-text-muted">
-              No folders in list
+              {t("No folders in list")}
             </div>
           ) : (
             workspaces.map((workspace, index) => (
@@ -202,7 +204,7 @@ export function WorkspaceMenu({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{workspace.name}</span>
                     {workspace.isDefault && (
-                      <span className="block text-[10px] text-text-muted">Default space</span>
+                      <span className="block text-[10px] text-text-muted">{t("Default space")}</span>
                     )}
                   </span>
                   {workspace.isOpen && !workspace.isCurrent && (
@@ -219,11 +221,11 @@ export function WorkspaceMenu({
                   }}
                   type="button"
                   role="menuitem"
-                  aria-label={`Actions for ${workspace.name}`}
+                  aria-label={t("Actions for {name}", { name: workspace.name })}
                   aria-haspopup="menu"
                   aria-expanded={actionMenuPath === workspace.path}
                   aria-controls={`workspace-actions-${index}`}
-                  title={`Actions for ${workspace.name}`}
+                  title={t("Actions for {name}", { name: workspace.name })}
                   onClick={() => {
                     setActionMenuPath((path) =>
                       path === workspace.path ? null : workspace.path,
@@ -238,13 +240,13 @@ export function WorkspaceMenu({
                     ref={actionMenuRef}
                     id={`workspace-actions-${index}`}
                     role="menu"
-                    aria-label={`Actions for ${workspace.name}`}
+                    aria-label={t("Actions for {name}", { name: workspace.name })}
                     className="absolute right-1 top-9 z-[60] min-w-48 rounded-xl border border-border bg-bg p-1.5 shadow-xl"
                   >
                     <button
                       type="button"
                       role="menuitem"
-                      aria-label={`Remove ${workspace.name} from List`}
+                      aria-label={t("Remove {name} from List", { name: workspace.name })}
                       onClick={() => {
                         setActionMenuPath(null);
                         onRemoveWorkspace(workspace.path);
@@ -253,9 +255,9 @@ export function WorkspaceMenu({
                     >
                       <MinusIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
                       <span className="min-w-0">
-                        <span className="block font-medium">Remove from List</span>
+                        <span className="block font-medium">{t("Remove from List")}</span>
                         <span className="block text-[10px] text-text-muted">
-                          Files stay on disk
+                          {t("Files stay on disk")}
                         </span>
                       </span>
                     </button>
@@ -268,7 +270,7 @@ export function WorkspaceMenu({
           <button
             type="button"
             role="menuitem"
-            aria-label="Add Folder"
+            aria-label={t("Add Folder")}
             onClick={() => {
               setOpen(false);
               onAddWorkspace();
@@ -276,7 +278,7 @@ export function WorkspaceMenu({
             className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 text-left text-sm text-text-muted transition-colors hover:bg-bg-muted hover:text-text"
           >
             <FolderPlusIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
-            <span>Add Folder</span>
+            <span>{t("Add Folder")}</span>
           </button>
         </div>
       )}

@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { useT } from "../../i18n";
 import type { NoteMetadata } from "../../types/note";
 import {
   SuggestionList,
@@ -15,14 +16,16 @@ interface WikilinkSuggestionListProps {
 export const WikilinkSuggestionList = forwardRef<
   WikilinkSuggestionListRef,
   WikilinkSuggestionListProps
->(({ items, command }, ref) => (
+>(function WikilinkSuggestionList({ items, command }, ref) {
+  const t = useT();
+  return (
   <SuggestionList
     ref={ref}
     items={items}
     command={command}
     itemKey={(item) => item.id}
     width="w-72"
-    emptyText="No matching notes"
+    emptyText={t("No matching notes")}
     renderItem={(item) => (
       <div className="flex flex-col min-w-0">
         <span className="text-sm leading-snug font-medium truncate">
@@ -36,5 +39,6 @@ export const WikilinkSuggestionList = forwardRef<
       </div>
     )}
   />
-));
+  );
+});
 WikilinkSuggestionList.displayName = "WikilinkSuggestionList";

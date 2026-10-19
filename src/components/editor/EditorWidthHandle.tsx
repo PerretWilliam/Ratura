@@ -8,6 +8,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { cn } from "../../lib/utils";
 import type { EditorWidth } from "../../types/note";
+import { useT } from "../../i18n";
 
 // Preset widths in px (rem * 16) for snap detection
 const PRESET_PX: { width: EditorWidth; px: number }[] = [
@@ -48,6 +49,7 @@ export function EditorWidthHandles({
 function ActiveEditorWidthHandles({
   containerRef,
 }: Pick<EditorWidthHandlesProps, "containerRef">) {
+  const t = useT();
   const {
     editorWidth,
     customEditorWidthPx,
@@ -207,7 +209,7 @@ function ActiveEditorWidthHandles({
       <div
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize editor width (left)"
+        aria-label={t("Resize editor width (left)")}
         className={cn(
           "absolute top-0 h-full w-3 cursor-col-resize pointer-events-auto group",
           isDragging && "z-20",
@@ -231,7 +233,7 @@ function ActiveEditorWidthHandles({
       <div
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize editor width (right)"
+        aria-label={t("Resize editor width (right)")}
         className={cn(
           "absolute top-0 h-full w-3 cursor-col-resize pointer-events-auto group",
           isDragging && "z-20",

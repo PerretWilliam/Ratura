@@ -92,6 +92,7 @@ export interface Settings {
   customColorsLight?: CustomColors;
   customColorsDark?: CustomColors;
   customCss?: string;
+  language?: string;
   pasteMode?: PasteMode;
 }
 

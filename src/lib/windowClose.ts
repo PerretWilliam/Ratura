@@ -1,3 +1,5 @@
+import { t as tNow } from "../i18n";
+
 export type RecoveryPersistenceResult =
   | { status: "not-needed" }
   | { status: "recovered"; path: string };
@@ -49,7 +51,7 @@ export async function runSafeWindowClose(
       recovery = await dependencies.persistRecovery();
     } catch (recoveryError) {
       const combinedError = new Error(
-        "Could not save or recover the draft before closing.",
+        tNow("Could not save or recover the draft before closing."),
       ) as Error & { cause?: unknown };
       combinedError.cause = { saveError, recoveryError };
       throw combinedError;

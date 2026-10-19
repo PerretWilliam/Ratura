@@ -48,6 +48,7 @@ import {
   type BlockDragTarget,
 } from "./blockDrag";
 import { getInterfaceZoom } from "./interfaceGeometry";
+import { msg, useT } from "../../../i18n";
 
 interface SelectionMenuProps {
   editor: Editor;
@@ -95,30 +96,30 @@ function MenuButton({
 }
 
 const BLOCK_STYLES = [
-  { value: "text", label: "Text", shortLabel: "Text", icon: PilcrowIcon },
-  { value: "h1", label: "Heading 1", shortLabel: "H1", icon: Heading1Icon },
-  { value: "h2", label: "Heading 2", shortLabel: "H2", icon: Heading2Icon },
-  { value: "h3", label: "Heading 3", shortLabel: "H3", icon: Heading3Icon },
-  { value: "h4", label: "Heading 4", shortLabel: "H4", icon: Heading4Icon },
+  { value: "text", label: msg("Text"), shortLabel: msg("Text"), icon: PilcrowIcon },
+  { value: "h1", label: msg("Heading 1"), shortLabel: msg("H1"), icon: Heading1Icon },
+  { value: "h2", label: msg("Heading 2"), shortLabel: msg("H2"), icon: Heading2Icon },
+  { value: "h3", label: msg("Heading 3"), shortLabel: msg("H3"), icon: Heading3Icon },
+  { value: "h4", label: msg("Heading 4"), shortLabel: msg("H4"), icon: Heading4Icon },
   {
     value: "bulletList",
-    label: "Bulleted list",
-    shortLabel: "Bullets",
+    label: msg("Bulleted list"),
+    shortLabel: msg("Bullets"),
     icon: ListIcon,
   },
   {
     value: "orderedList",
-    label: "Numbered list",
-    shortLabel: "Numbered",
+    label: msg("Numbered list"),
+    shortLabel: msg("Numbered"),
     icon: ListOrderedIcon,
   },
   {
     value: "taskList",
-    label: "Task list",
-    shortLabel: "Tasks",
+    label: msg("Task list"),
+    shortLabel: msg("Tasks"),
     icon: CheckSquareIcon,
   },
-  { value: "quote", label: "Quote", shortLabel: "Quote", icon: QuoteIcon },
+  { value: "quote", label: msg("Quote"), shortLabel: msg("Quote"), icon: QuoteIcon },
 ] as const;
 
 type BlockStyle = (typeof BLOCK_STYLES)[number]["value"];
@@ -357,6 +358,7 @@ function BlockStyleMenu({
   activeStyle: BlockStyle;
   portalContainer: HTMLElement | null;
 }) {
+  const t = useT();
   const activeOption =
     BLOCK_STYLES.find((option) => option.value === activeStyle) ??
     BLOCK_STYLES[0];
@@ -368,12 +370,12 @@ function BlockStyleMenu({
         <button
           type="button"
           className="notion-menu-button notion-block-style-trigger"
-          aria-label={`Block style: ${activeOption.shortLabel}`}
-          title="Block style"
+          aria-label={t("Block style: {shortLabel}", { shortLabel: t(activeOption.shortLabel) })}
+          title={t("Block style")}
           onMouseDown={(event) => event.preventDefault()}
         >
           <ActiveIcon className="w-4 h-4 stroke-[1.6]" />
-          <span>{activeOption.shortLabel}</span>
+          <span>{t(activeOption.shortLabel)}</span>
           <ChevronDownIcon className="w-3 h-3 stroke-[1.8] notion-block-style-chevron" />
         </button>
       </DropdownMenu.Trigger>
@@ -397,11 +399,11 @@ function BlockStyleMenu({
                 ) : null}
                 <DropdownMenu.Item
                   className={`notion-block-style-item ${isActive ? "is-active" : ""}`}
-                  aria-label={`Set block style to ${option.label}`}
+                  aria-label={t("Set block style to {label}", { label: t(option.label) })}
                   onSelect={() => applyBlockStyle(editor, option.value)}
                 >
                   <OptionIcon className="w-4.5 h-4.5 stroke-[1.6]" />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                   {isActive ? (
                     <CheckIcon className="w-3.5 h-3.5 stroke-2" />
                   ) : (
@@ -428,6 +430,7 @@ function ColorMenu({
   activeColor: string | null;
   portalContainer: HTMLElement | null;
 }) {
+  const t = useT();
   const colors =
     kind === "text" ? TEXT_COLOR_OPTIONS : HIGHLIGHT_COLOR_OPTIONS;
   const activeOption = colors.find(({ value }) => value === activeColor);
@@ -443,8 +446,8 @@ function ColorMenu({
         <button
           type="button"
           className="notion-menu-button notion-color-trigger"
-          aria-label={kind === "text" ? "Text color" : "Highlight color"}
-          title={kind === "text" ? "Text color" : "Highlight color"}
+          aria-label={kind === "text" ? t("Text color") : t("Highlight color")}
+          title={kind === "text" ? t("Text color") : t("Highlight color")}
           onMouseDown={(event) => event.preventDefault()}
         >
           <span>{kind === "text" ? "A" : "H"}</span>
@@ -481,7 +484,7 @@ function ColorMenu({
               }
             }}
           >
-            Default
+            {t("Default")}
           </DropdownMenu.Item>
           <div className="notion-color-grid">
             {colors.map((color) => (
@@ -512,6 +515,7 @@ function ColorMenu({
 }
 
 export function SelectionMenu({ editor, onEditLink }: SelectionMenuProps) {
+  const t = useT();
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuElement, setMenuElement] = useState<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
@@ -556,42 +560,42 @@ export function SelectionMenu({ editor, onEditLink }: SelectionMenuProps) {
       />
       <span className="notion-menu-separator" />
       <MenuButton
-        label="Bold"
+        label={t("Bold")}
         active={active.bold}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <BoldIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </MenuButton>
       <MenuButton
-        label="Italic"
+        label={t("Italic")}
         active={active.italic}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <ItalicIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </MenuButton>
       <MenuButton
-        label="Underline"
+        label={t("Underline")}
         active={active.underline}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
         <u>U</u>
       </MenuButton>
       <MenuButton
-        label="Strikethrough"
+        label={t("Strikethrough")}
         active={active.strike}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <StrikethroughIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </MenuButton>
       <MenuButton
-        label="Inline code"
+        label={t("Inline code")}
         active={active.code}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
         <InlineCodeIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </MenuButton>
       <MenuButton
-        label="Clear formatting"
+        label={t("Clear formatting")}
         onClick={() => editor.chain().focus().unsetAllMarks().run()}
       >
         Tx
@@ -611,21 +615,21 @@ export function SelectionMenu({ editor, onEditLink }: SelectionMenuProps) {
       />
       <span className="notion-menu-separator" />
       <MenuButton
-        label="Subscript"
+        label={t("Subscript")}
         active={active.subscript}
         onClick={() => editor.chain().focus().toggleSubscript().run()}
       >
         X<sub>2</sub>
       </MenuButton>
       <MenuButton
-        label="Superscript"
+        label={t("Superscript")}
         active={active.superscript}
         onClick={() => editor.chain().focus().toggleSuperscript().run()}
       >
         X<sup>2</sup>
       </MenuButton>
       <MenuButton
-        label={active.link ? "Edit link" : "Add link"}
+        label={active.link ? t("Edit link") : t("Add link")}
         active={active.link}
         onClick={onEditLink}
       >
@@ -637,6 +641,7 @@ export function SelectionMenu({ editor, onEditLink }: SelectionMenuProps) {
 }
 
 export function BlockDragControls({ editor }: { editor: Editor }) {
+  const t = useT();
   const [nodePos, setNodePos] = useState<number | null>(null);
   const [tableBlockHandleProximate, setTableBlockHandleProximate] =
     useState(false);
@@ -1039,8 +1044,8 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
         <button
           type="button"
           className="notion-block-add"
-          aria-label="Add block"
-          title="Add block"
+          aria-label={t("Add block")}
+          title={t("Add block")}
           tabIndex={isHandleProximate ? 0 : -1}
           draggable={false}
           onMouseDown={(event) => {
@@ -1054,9 +1059,9 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
         <button
           type="button"
           className="notion-block-grip"
-          aria-label="Move block with Arrow Up or Arrow Down"
+          aria-label={t("Move block with Arrow Up or Arrow Down")}
           aria-keyshortcuts="ArrowUp ArrowDown"
-          title="Drag block; use Arrow Up or Arrow Down from the keyboard"
+          title={t("Drag block; use Arrow Up or Arrow Down from the keyboard")}
           tabIndex={isHandleProximate ? 0 : -1}
           draggable={false}
           onKeyDown={(event) => {
