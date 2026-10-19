@@ -400,6 +400,7 @@ interface GridPickerProps {
 }
 
 function GridPicker({ onSelect }: GridPickerProps) {
+  const t = useT();
   const [hovered, setHovered] = useState({ row: 3, col: 3 });
 
   return (
@@ -426,7 +427,7 @@ function GridPicker({ onSelect }: GridPickerProps) {
         })}
       </div>
       <p className="text-xs text-center mt-2 text-text-muted">
-        {hovered.row} × {hovered.col} table
+        {t("{rows} × {cols} table", { rows: hovered.row, cols: hovered.col })}
       </p>
     </>
   );
@@ -3336,7 +3337,7 @@ export function Editor({
                 size="md"
                 className="mt-4"
               >
-                New Note{" "}
+                {t("New Note")}{" "}
                 <span className="text-text-muted ml-1">
                   {mod}
                   {isMac ? "" : "+"}N

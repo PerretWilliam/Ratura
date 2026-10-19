@@ -1,6 +1,6 @@
 [package]
 name = "Ratura"
-version = "1.2.0"
+version = "1.2.1"
 description = "An offline markdown-based notes app"
 authors = ["erictli", "PerretWilliam"]
 edition = "2021"

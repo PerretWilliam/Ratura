@@ -1380,6 +1380,39 @@ table.not-prose th {
   cursor: grabbing;
 }
 
+body.notion-block-dragging,
+body.notion-block-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+.notion-block-source-outline {
+  position: fixed;
+  z-index: 41;
+  margin: -3px -6px;
+  padding: 3px 6px;
+  box-sizing: content-box;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  pointer-events: none;
+}
+
+.notion-block-drag-ghost.ProseMirror {
+  position: fixed;
+  z-index: 69;
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--color-bg);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  opacity: 0.85;
+  pointer-events: none;
+  transform: rotate(0.6deg);
+}
+
 
 .notion-table-controls {
   position: fixed;

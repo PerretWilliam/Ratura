@@ -96,7 +96,7 @@ export function SearchToolbar({
       <div className="flex items-center gap-1.5">
         <IconButton
           onClick={onToggleReplace}
-          title={isReplaceOpen ? "Hide Replace" : "Show Replace"}
+          title={isReplaceOpen ? t("Hide Replace") : t("Show Replace")}
           className="shrink-0"
         >
           {isReplaceOpen ? (

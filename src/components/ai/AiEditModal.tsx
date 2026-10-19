@@ -180,8 +180,8 @@ export function AiEditModal({
               onKeyDown={handleKeyDown}
               placeholder={
                 cliInstalled === false
-                  ? `${cliName} not installed`
-                  : "Describe how to edit the current note..."
+                  ? t("{cli} not installed", { cli: cliName })
+                  : t("Describe how to edit the current note...")
               }
               disabled={isExecuting || cliInstalled === false}
               autoComplete="off"
@@ -201,25 +201,26 @@ export function AiEditModal({
           {isExecuting ? (
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <SpinnerIcon className="w-4 h-4 animate-spin" />
-              <span>{providerName} is editing your note...</span>
+              <span>{t("{name} is editing your note...", { name: providerName })}</span>
             </div>
           ) : cliInstalled === false ? (
             <>
               <div className="text-sm space-y-0.5 p-3 bg-orange-500/10 rounded-md ">
                 <div className="font-medium text-orange-700 dark:text-orange-400">
-                  {cliName} Not Found
+                  {t("{cli} not found", { cli: cliName })}
                 </div>
                 <div className="text-orange-700/80 dark:text-orange-400/80">
-                  You'll need {cliName} to use this feature. Visit{" "}
+                  {t("You'll need {cli} to use this feature.", { cli: cliName })}{" "}
                   <a
                     href={installUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-orange-700 dark:text-orange-400 font-medium hover:underline"
                   >
-                    {providerName}
-                  </a>{" "}
-                  to install it, then restart Ratura.
+                    {t("Install {name}", { name: providerName })}
+                  </a>
+                  {", "}
+                  {t("then restart Ratura.")}
                 </div>
               </div>
               <div className="w-full flex justify-between">
@@ -227,14 +228,14 @@ export function AiEditModal({
                   <kbd className="text-xs px-1.5 py-0.5 rounded-md bg-bg-muted text-text-muted">
                     {t("Esc")}
                   </kbd>
-                  <span>to go back</span>
+                  <span>{t("to go back")}</span>
                 </div>
               </div>
             </>
           ) : cliInstalled === null ? (
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <SpinnerIcon className="w-4 h-4 animate-spin" />
-              <span>Checking for {cliName}...</span>
+              <span>{t("Checking for {cli}...", { cli: cliName })}</span>
             </div>
           ) : (
             <>
@@ -263,8 +264,10 @@ export function AiEditModal({
               <div className="text-sm space-y-1 p-3 bg-bg-muted rounded-md">
                 <span className="font-medium text-text">{t("How does it work?")}</span>{" "}
                 <span className="text-text-muted">
-                  {providerName} will edit the current note directly using your
-                  local {cliName}. You'll be able to undo changes.
+                  {t(
+                    "{name} will edit the current note directly using your local {cli}. You'll be able to undo changes.",
+                    { name: providerName, cli: cliName },
+                  )}
                 </span>
               </div>
 
@@ -273,13 +276,13 @@ export function AiEditModal({
                   <kbd className="text-xs px-1.5 py-0.5 rounded-md bg-bg-muted text-text-muted">
                     {t("Esc")}
                   </kbd>
-                  <span>to go back</span>
+                  <span>{t("to go back")}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm text-text-muted">
                   <kbd className="text-xs px-1.5 py-0.5 rounded-md bg-bg-muted text-text-muted">
                     {t("Enter")}
                   </kbd>
-                  <span>to submit</span>
+                  <span>{t("to submit")}</span>
                 </div>
               </div>
             </>

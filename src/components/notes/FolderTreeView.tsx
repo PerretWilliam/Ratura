@@ -203,7 +203,7 @@ const FileItem = memo(function FileItem({
         <ContextMenu.Content className="min-w-44 bg-bg border border-border rounded-md shadow-lg py-1 z-50">
           <ContextMenu.Item className={menuItemClass} onSelect={handlePin}>
             <PinIcon className="w-4 h-4 stroke-[1.6]" />
-            {isPinned ? "Unpin" : "Pin"}
+            {isPinned ? t("Unpin") : t("Pin")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
@@ -1144,7 +1144,7 @@ export function FolderTreeView({
                 handleDeleteConfirm();
               }}
             >
-              {isDeleting ? "Deleting…" : "Delete"}
+              {isDeleting ? t("Deleting…") : t("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1203,7 +1203,7 @@ export function FolderTreeView({
                 handleNoteDeleteConfirm();
               }}
             >
-              {isDeleting ? "Deleting…" : "Delete"}
+              {isDeleting ? t("Deleting…") : t("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

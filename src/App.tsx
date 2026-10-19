@@ -710,13 +710,16 @@ function AppContent() {
               <ClaudeIcon className="w-4.5 h-4.5 fill-text-muted animate-spin-slow" />
             )}
             <div className="text-sm font-medium text-text">
-              {aiProvider === "codex"
-                ? "Codex is editing your note..."
-                : aiProvider === "opencode"
-                  ? "OpenCode is editing your note..."
-                : aiProvider === "ollama"
-                  ? "Ollama is editing your note..."
-                  : "Claude is editing your note..."}
+              {t("{name} is editing your note...", {
+                name:
+                  aiProvider === "codex"
+                    ? "Codex"
+                    : aiProvider === "opencode"
+                      ? "OpenCode"
+                      : aiProvider === "ollama"
+                        ? "Ollama"
+                        : "Claude",
+              })}
             </div>
           </div>
         </div>
@@ -786,7 +789,7 @@ function UpdateToast({
   return (
     <div className="flex flex-col gap-1">
       <div className="font-medium text-sm">
-        Update Available: v{update.version}
+        {t("Update available: v{version}", { version: update.version })}
       </div>
       {update.body && (
         <div className="text-xs text-text-muted line-clamp-3">
@@ -798,7 +801,7 @@ function UpdateToast({
         disabled={installing}
         className="self-start mt-1 text-xs font-medium px-3 py-1.5 rounded-md bg-text text-bg hover:opacity-90 disabled:opacity-50 transition-opacity"
       >
-        {installing ? "Installing..." : "Update Now"}
+        {installing ? t("Installing...") : t("Update now")}
       </button>
     </div>
   );

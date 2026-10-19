@@ -92,7 +92,7 @@ export const Footer = memo(function Footer({
       <div className="flex items-center gap-1.5">
         {/* Branch icon with name on hover */}
         {status?.currentBranch ? (
-          <Tooltip content={"Branch: " + status.currentBranch}>
+          <Tooltip content={t("Branch: {branch}", { branch: status.currentBranch })}>
             <span className="text-text-muted flex items-center">
               <GitBranchIcon className="w-4.5 h-4.5 stroke-[1.5]" />
             </span>

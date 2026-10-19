@@ -112,7 +112,7 @@ export function CommitPanel({ open, onClose }: CommitPanelProps) {
           onClick={handleCommit}
           disabled={!canCommit || isCommitting}
         >
-          {isCommitting ? "Committing..." : "Commit"}
+          {isCommitting ? t("Committing...") : t("Commit")}
         </Button>
       </div>
     </div>

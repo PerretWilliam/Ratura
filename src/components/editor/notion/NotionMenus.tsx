@@ -650,6 +650,7 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
     left: number;
     width: number;
   } | null>(null);
+  const [sourceOutline, setSourceOutline] = useState<DOMRect | null>(null);
   const targetRef = useRef<BlockDragTarget | null>(null);
   const dragSessionRef = useRef<{
     target: BlockDragTarget;
@@ -665,7 +666,15 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
     lastPoint: { left: number; top: number };
     origin: HTMLElement;
     active: boolean;
+    ghost: HTMLElement | null;
   } | null>(null);
+  const getTargetRect = useCallback(
+    (target: BlockDragTarget | null) => {
+      const dom = target ? editor.view.nodeDOM(target.pos) : null;
+      return dom instanceof Element ? dom.getBoundingClientRect() : null;
+    },
+    [editor],
+  );
   const usePointerBlockDrag =
     typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   const handleNodeChange = useCallback(
@@ -792,6 +801,9 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
     const session = pointerDragSessionRef.current;
     pointerDragSessionRef.current = null;
     setPointerDropIndicator(null);
+    setSourceOutline(null);
+    session?.ghost?.remove();
+    document.body.classList.remove("notion-block-dragging");
     editor.view.dom.removeAttribute("data-block-pointer-dragging");
 
     if (session?.origin.hasPointerCapture?.(session.pointerId)) {
@@ -829,7 +841,9 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
         lastPoint: point,
         origin,
         active: false,
+        ghost: null,
       };
+      document.body.classList.add("notion-block-dragging");
       try {
         origin.setPointerCapture(event.pointerId);
       } catch {
@@ -879,10 +893,27 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
       ) {
         session.active = true;
         editorDom.setAttribute("data-block-pointer-dragging", "true");
+        const source = editor.view.nodeDOM(session.target.pos);
+        if (source instanceof HTMLElement) {
+          const ghost = document.createElement("div");
+          ghost.className = `${editorDom.className} notion-block-drag-ghost`;
+          ghost.setAttribute("aria-hidden", "true");
+          ghost.appendChild(source.cloneNode(true));
+          document.body.appendChild(ghost);
+          session.ghost = ghost;
+        }
       }
       if (!session.active) return;
 
       event.preventDefault();
+      const sourceRect = getTargetRect(session.target);
+      setSourceOutline(sourceRect);
+      if (session.ghost && sourceRect) {
+        const zoom = getInterfaceZoom();
+        session.ghost.style.left = `${(sourceRect.left + session.lastPoint.left - session.startPoint.left) / zoom}px`;
+        session.ghost.style.top = `${(sourceRect.top + session.lastPoint.top - session.startPoint.top) / zoom}px`;
+        session.ghost.style.width = `${sourceRect.width / zoom}px`;
+      }
       const dropTarget = resolveBlockDropTarget(
         editor,
         session.target,
@@ -945,7 +976,13 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
       );
       resetPointerDrag();
     };
-  }, [beginPointerDrag, editor, resetPointerDrag, usePointerBlockDrag]);
+  }, [
+    beginPointerDrag,
+    editor,
+    getTargetRect,
+    resetPointerDrag,
+    usePointerBlockDrag,
+  ]);
 
   useEffect(() => {
     const rememberDragPoint = (event: DragEvent) => {
@@ -1064,6 +1101,10 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
           title={t("Drag block; use Arrow Up or Arrow Down from the keyboard")}
           tabIndex={isHandleProximate ? 0 : -1}
           draggable={false}
+          onPointerEnter={() => setSourceOutline(getTargetRect(targetRef.current))}
+          onPointerLeave={() => {
+            if (!pointerDragSessionRef.current) setSourceOutline(null);
+          }}
           onKeyDown={(event) => {
             if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
             const target = targetRef.current;
@@ -1098,6 +1139,20 @@ export function BlockDragControls({ editor }: { editor: Editor }) {
           <GripVerticalIcon className="notion-block-control-icon" />
         </button>
       </DragHandle>
+      {sourceOutline &&
+        createPortal(
+          <div
+            className="notion-block-source-outline"
+            aria-hidden="true"
+            style={{
+              top: sourceOutline.top / getInterfaceZoom(),
+              left: sourceOutline.left / getInterfaceZoom(),
+              width: sourceOutline.width / getInterfaceZoom(),
+              height: sourceOutline.height / getInterfaceZoom(),
+            }}
+          />,
+          document.body,
+        )}
       {pointerDropIndicator &&
         createPortal(
           <div
