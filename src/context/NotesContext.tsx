@@ -106,6 +106,8 @@ interface NotesActionsContextValue {
   deleteFolder: (path: string) => Promise<void>;
   renameFolder: (oldPath: string, newName: string) => Promise<void>;
   moveNote: (id: string, targetFolder: string) => Promise<void>;
+  /** Renames the note's file; rejects with the backend error. */
+  renameNote: (id: string, newName: string) => Promise<void>;
   moveFolder: (path: string, targetParent: string) => Promise<void>;
   goBack: () => Promise<void>;
   goForward: () => Promise<void>;
@@ -808,38 +810,51 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     [refreshNotes]
   );
 
+  // Moves or renames a note file, then follows it in selection and history
+  const relocateNote = useCallback(
+    async (id: string, relocate: () => Promise<string>) => {
+      const draft = openNoteDraftRef.current();
+      await flushDraftBeforeRelocation(
+        draft,
+        draft.noteId === id,
+        () => workspaceTransitionFlushRef.current(),
+      );
+      const newId = await relocate();
+      if (newId === id) return;
+      if (selectedNoteIdRef.current === id) {
+        setSelectedNoteId(newId);
+        notesService.readNote(newId).then((note) => {
+          setCurrentNote(note);
+        }).catch((err) => {
+          setError(err instanceof Error ? err.message : "Failed to read moved note");
+        });
+      }
+
+      setNav((prev) => ({
+        ...prev,
+        history: prev.history.map((h) => (h === id ? newId : h)),
+      }));
+
+      await refreshNotes();
+    },
+    [refreshNotes]
+  );
+
   const moveNoteAction = useCallback(
     async (id: string, targetFolder: string) => {
       try {
-        const draft = openNoteDraftRef.current();
-        await flushDraftBeforeRelocation(
-          draft,
-          draft.noteId === id,
-          () => workspaceTransitionFlushRef.current(),
-        );
-        const newId = await notesService.moveNote(id, targetFolder);
-        // Update selection if we moved the selected note
-        if (selectedNoteIdRef.current === id) {
-          setSelectedNoteId(newId);
-          notesService.readNote(newId).then((note) => {
-            setCurrentNote(note);
-          }).catch((err) => {
-            setError(err instanceof Error ? err.message : "Failed to read moved note");
-          });
-        }
-
-        // Update navigation history to reflect the new ID
-        setNav((prev) => ({
-          ...prev,
-          history: prev.history.map((h) => (h === id ? newId : h)),
-        }));
-
-        await refreshNotes();
+        await relocateNote(id, () => notesService.moveNote(id, targetFolder));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to move note");
       }
     },
-    [refreshNotes]
+    [relocateNote]
+  );
+
+  const renameNoteAction = useCallback(
+    (id: string, newName: string) =>
+      relocateNote(id, () => notesService.renameNote(id, newName)),
+    [relocateNote]
   );
 
   const moveFolderAction = useCallback(
@@ -1346,6 +1361,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       deleteFolder: deleteFolderAction,
       renameFolder: renameFolderAction,
       moveNote: moveNoteAction,
+      renameNote: renameNoteAction,
       moveFolder: moveFolderAction,
       goBack,
       goForward,
@@ -1377,6 +1393,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       deleteFolderAction,
       renameFolderAction,
       moveNoteAction,
+      renameNoteAction,
       moveFolderAction,
       goBack,
       goForward,

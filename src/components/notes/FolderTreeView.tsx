@@ -86,6 +86,7 @@ interface FileItemProps {
   onUnpin: (id: string) => Promise<void>;
   onDuplicate: (id: string) => Promise<void>;
   onDelete: (id: string) => void;
+  onRename: (id: string, currentName: string) => void;
   onMoveToParent?: (id: string, targetFolder: string) => void;
   focusedItemKey?: string | null;
 }
@@ -101,6 +102,7 @@ const FileItem = memo(function FileItem({
   onUnpin,
   onDuplicate,
   onDelete,
+  onRename,
   onMoveToParent,
   focusedItemKey,
 }: FileItemProps) {
@@ -211,6 +213,13 @@ const FileItem = memo(function FileItem({
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
             Duplicate
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className={menuItemClass}
+            onSelect={() => onRename(note.id, note.title)}
+          >
+            <PencilIcon className="w-4 h-4 stroke-[1.6]" />
+            Rename
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
@@ -354,6 +363,7 @@ interface FolderItemProps {
   onUnpinNote: (id: string) => Promise<void>;
   onDuplicateNote: (id: string) => Promise<void>;
   onDeleteNote: (id: string) => void;
+  onRenameNote: (id: string, currentName: string) => void;
   onMoveNoteToParent: (id: string, targetFolder: string) => void;
   onMoveFolderToParent: (path: string, targetParent: string) => void;
 }
@@ -378,6 +388,7 @@ export const FolderItemComponent = memo(function FolderItem({
   onUnpinNote,
   onDuplicateNote,
   onDeleteNote,
+  onRenameNote,
   onMoveNoteToParent,
   onMoveFolderToParent,
 }: FolderItemProps) {
@@ -462,6 +473,7 @@ export const FolderItemComponent = memo(function FolderItem({
                   onUnpinNote={onUnpinNote}
                   onDuplicateNote={onDuplicateNote}
                   onDeleteNote={onDeleteNote}
+                  onRenameNote={onRenameNote}
                   onMoveNoteToParent={onMoveNoteToParent}
                   onMoveFolderToParent={onMoveFolderToParent}
                 />
@@ -479,6 +491,7 @@ export const FolderItemComponent = memo(function FolderItem({
                   onUnpin={onUnpinNote}
                   onDuplicate={onDuplicateNote}
                   onDelete={onDeleteNote}
+                  onRename={onRenameNote}
                   onMoveToParent={onMoveNoteToParent}
                   focusedItemKey={focusedItemKey}
                 />
@@ -606,6 +619,7 @@ export function FolderTreeView({
     createFolder,
     deleteFolder,
     renameFolder,
+    renameNote,
     pinNote,
     unpinNote,
     duplicateNote,
@@ -628,6 +642,10 @@ export function FolderTreeView({
   const [subfolderParent, setSubfolderParent] = useState("");
   const [noteDeleteDialogOpen, setNoteDeleteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+  const [noteToRename, setNoteToRename] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [knownFolders, setKnownFolders] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -747,6 +765,23 @@ export function FolderTreeView({
       }
     }
   }, [noteToDelete, deleteNote, isDeleting]);
+
+  const openRenameNoteDialog = useCallback((id: string, name: string) => {
+    setNoteToRename({ id, name });
+  }, []);
+
+  const handleRenameNoteConfirm = useCallback(
+    async (newName: string) => {
+      if (!noteToRename) return;
+      try {
+        await renameNote(noteToRename.id, newName);
+        setNoteToRename(null);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : String(error));
+      }
+    },
+    [noteToRename, renameNote],
+  );
 
   const handleRenameConfirm = useCallback(
     async (newName: string) => {
@@ -1014,6 +1049,7 @@ export function FolderTreeView({
             onUnpin={unpinNote}
             onDuplicate={duplicateNote}
             onDelete={openDeleteNoteDialog}
+            onRename={openRenameNoteDialog}
             focusedItemKey={focusedItemKey}
           />
         ))}
@@ -1046,6 +1082,7 @@ export function FolderTreeView({
                 onUnpinNote={unpinNote}
                 onDuplicateNote={duplicateNote}
                 onDeleteNote={openDeleteNoteDialog}
+                onRenameNote={openRenameNoteDialog}
                 onMoveNoteToParent={moveNote}
                 onMoveFolderToParent={moveFolder}
               />
@@ -1067,6 +1104,7 @@ export function FolderTreeView({
             onUnpin={unpinNote}
             onDuplicate={duplicateNote}
             onDelete={openDeleteNoteDialog}
+            onRename={openRenameNoteDialog}
             focusedItemKey={focusedItemKey}
           />
         ))}
@@ -1107,6 +1145,17 @@ export function FolderTreeView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rename note dialog */}
+      <FolderNameDialog
+        open={noteToRename !== null}
+        onOpenChange={(open) => !open && setNoteToRename(null)}
+        onConfirm={handleRenameNoteConfirm}
+        title="Rename Note"
+        description="Enter a new name for the note"
+        confirmLabel="Rename"
+        defaultValue={noteToRename?.name ?? ""}
+      />
 
       {/* Rename folder dialog */}
       <FolderNameDialog

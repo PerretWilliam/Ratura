@@ -77,6 +77,7 @@ describe("FolderItemComponent", () => {
             onUnpinNote={vi.fn(async () => undefined)}
             onDuplicateNote={vi.fn(async () => undefined)}
             onDeleteNote={vi.fn()}
+            onRenameNote={vi.fn()}
             onMoveNoteToParent={vi.fn()}
             onMoveFolderToParent={vi.fn()}
           />

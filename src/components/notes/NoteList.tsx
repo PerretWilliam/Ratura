@@ -21,7 +21,10 @@ import {
   CopyIcon,
   TrashIcon,
   ExternalLinkIcon,
+  PencilIcon,
 } from "../icons";
+import { toast } from "sonner";
+import { FolderNameDialog } from "./FolderNameDialog";
 import type {
   AttachmentMetadata,
   NoteSortOrder,
@@ -144,6 +147,7 @@ interface NoteItemWithMenuProps {
   onUnpin: (id: string) => Promise<void>;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, currentName: string) => void;
   onRefreshSettings: () => Promise<void> | void;
 }
 
@@ -159,6 +163,7 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
   onUnpin,
   onDuplicate,
   onDelete,
+  onRename,
   onRefreshSettings,
 }: NoteItemWithMenuProps) {
   const handlePin = useCallback(async () => {
@@ -209,6 +214,13 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
             Duplicate
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className={menuItemClass}
+            onSelect={() => onRename(id, title)}
+          >
+            <PencilIcon className="w-4 h-4 stroke-[1.6]" />
+            Rename
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
@@ -332,6 +344,7 @@ export function NoteList({
     selectAttachment,
     deleteNote,
     duplicateNote,
+    renameNote,
     pinNote,
     unpinNote,
     isLoading,
@@ -341,6 +354,10 @@ export function NoteList({
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+  const [noteToRename, setNoteToRename] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -371,6 +388,23 @@ export function NoteList({
       }
     }
   }, [noteToDelete, deleteNote]);
+
+  const openRenameDialogForNote = useCallback((id: string, name: string) => {
+    setNoteToRename({ id, name });
+  }, []);
+
+  const handleRenameConfirm = useCallback(
+    async (newName: string) => {
+      if (!noteToRename) return;
+      try {
+        await renameNote(noteToRename.id, newName);
+        setNoteToRename(null);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : String(error));
+      }
+    },
+    [noteToRename, renameNote],
+  );
 
   const openDeleteDialogForNote = useCallback((noteId: string) => {
     setNoteToDelete(noteId);
@@ -531,6 +565,7 @@ export function NoteList({
             onUnpin={unpinNote}
             onDuplicate={duplicateNote}
             onDelete={openDeleteDialogForNote}
+            onRename={openRenameDialogForNote}
             onRefreshSettings={refreshSettings}
           />
         ))}
@@ -545,6 +580,16 @@ export function NoteList({
       </div>
 
       {/* Delete confirmation dialog */}
+      <FolderNameDialog
+        open={noteToRename !== null}
+        onOpenChange={(open) => !open && setNoteToRename(null)}
+        onConfirm={handleRenameConfirm}
+        title="Rename Note"
+        description="Enter a new name for the note"
+        confirmLabel="Rename"
+        defaultValue={noteToRename?.name ?? ""}
+      />
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

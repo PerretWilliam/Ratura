@@ -96,6 +96,7 @@ import { ScratchTableRow } from "./notion/tableExtensions";
 import { ScratchTableMetadata } from "./notion/tableMetadata";
 import { ScratchTableView } from "./notion/tableView";
 import { replaceEditorContentWithoutHistory } from "./editorHistory";
+import { NoteTitleInput } from "./NoteTitleInput";
 import {
   pasteTableTsv,
   serializeTableCellSelectionToTsv,
@@ -304,32 +305,6 @@ function formatDateTime(timestamp: number): string {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function focusAndSelectTitle(editor: TiptapEditor): boolean {
-  let titleFrom = -1;
-  let titleTo = -1;
-
-  editor.state.doc.descendants((node, pos) => {
-    if (node.type.name !== "heading" || node.attrs.level !== 1) {
-      return true;
-    }
-    titleFrom = pos + 1;
-    titleTo = pos + node.nodeSize - 1;
-    return false;
-  });
-
-  if (titleFrom < 0 || titleTo < 0) return false;
-
-  editor
-    .chain()
-    .focus()
-    .setTextSelection(
-      titleFrom === titleTo ? titleFrom : { from: titleFrom, to: titleTo },
-    )
-    .run();
-
-  return true;
 }
 
 function getMathNodeRect(
@@ -828,6 +803,8 @@ export function Editor({
 
   const createNote = notesCtx?.createNote;
   const consumePendingNewNote = notesCtx?.consumePendingNewNote;
+  const renameNote = notesCtx?.renameNote;
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const hasExternalChanges = previewMode
     ? previewMode.hasExternalChanges
     : notesCtx!.hasExternalChanges;
@@ -2574,7 +2551,11 @@ export function Editor({
       isLoadingRef.current = false;
 
       if (consumePendingNewNote?.(loadingNoteId)) {
-        if (!focusAndSelectTitle(editor)) {
+        const titleInput = titleInputRef.current;
+        if (titleInput) {
+          titleInput.focus();
+          titleInput.select();
+        } else {
           editor.commands.focus("start");
         }
         return;
@@ -3669,6 +3650,18 @@ export function Editor({
           className="absolute inset-0 overflow-y-auto overflow-x-hidden"
           dir={textDirection}
         >
+          {!previewMode && currentNote && renameNote && (
+            <NoteTitleInput
+              ref={titleInputRef}
+              noteId={currentNote.id}
+              title={currentNote.title}
+              onRename={renameNote}
+              onExit={() => {
+                if (sourceMode) titleInputRef.current?.blur();
+                else editor?.commands.focus("start");
+              }}
+            />
+          )}
           {sourceMode ? (
             /* Markdown source textarea */
             <div className="h-full">
