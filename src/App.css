@@ -1401,9 +1401,10 @@ body.notion-block-dragging * {
 .notion-block-drag-ghost.ProseMirror {
   position: fixed;
   z-index: 69;
+  max-width: none;
   max-height: 240px;
   margin: 0;
-  padding: 0;
+  padding: 2px 6px;
   overflow: hidden;
   border-radius: 6px;
   background: var(--color-bg);
@@ -1411,6 +1412,10 @@ body.notion-block-dragging * {
   opacity: 0.85;
   pointer-events: none;
   transform: rotate(0.6deg);
+}
+
+.notion-block-drag-ghost.ProseMirror > * {
+  margin: 0;
 }
 
 
