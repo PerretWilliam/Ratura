@@ -43,7 +43,7 @@ export function WorkspaceMenu({
     currentWorkspacePath?.split(/[\\/]/).filter(Boolean) ?? [];
   const currentWorkspaceName = currentWorkspace?.name ??
     currentPathSegments[currentPathSegments.length - 1] ??
-    "Select Space";
+    t("Select Space");
 
   useEffect(() => {
     if (!open) return;

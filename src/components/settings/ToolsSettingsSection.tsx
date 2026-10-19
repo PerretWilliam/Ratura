@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react";
+import { Fragment, useState, useEffect, useReducer } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { Button } from "../ui";
@@ -156,8 +156,10 @@ export function ToolsSettingsSection() {
       <section className="pb-2">
         <h2 className="text-xl font-medium mb-0.5">{t("AI Providers")}</h2>
         <p className="text-sm text-text-muted mb-4">
-          Edit notes with AI from the command palette ({mod}P while editing a
-          note)
+          {t(
+            "Edit notes with AI from the command palette ({shortcut} while editing a note)",
+            { shortcut: `${mod}P` },
+          )}
         </p>
 
         {aiProvidersLoading ? (
@@ -213,11 +215,18 @@ export function ToolsSettingsSection() {
           <section className="pb-2">
             <h2 className="text-xl font-medium mb-0.5">{t("CLI Tool")}</h2>
             <p className="text-sm text-text-muted mb-4">
-              Open notes from the terminal with the{" "}
-              <code className="font-mono text-xs bg-bg-muted px-1.5 py-0.5 rounded">
-                ratura
-              </code>{" "}
-              command
+              {t("Open notes from the terminal with the {command} command")
+                .split("{command}")
+                .map((part, index) => (
+                  <Fragment key={index}>
+                    {index > 0 && (
+                      <code className="font-mono text-xs bg-bg-muted px-1.5 py-0.5 rounded">
+                        ratura
+                      </code>
+                    )}
+                    {part}
+                  </Fragment>
+                ))}
             </p>
 
             {cli.error ? (
@@ -277,7 +286,7 @@ export function ToolsSettingsSection() {
                       {t("Uninstalling...")}
                     </>
                   ) : (
-                    "Uninstall CLI Tool"
+                    t("Uninstall CLI Tool")
                   )}
                 </Button>
               </>
@@ -298,7 +307,7 @@ export function ToolsSettingsSection() {
                       {t("Installing...")}
                     </>
                   ) : (
-                    "Install CLI Tool"
+                    t("Install CLI Tool")
                   )}
                 </Button>
               </>

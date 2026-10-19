@@ -54,7 +54,7 @@ export function SidebarFolderSection({
     <section aria-label={t("Folders")} className="flex flex-col gap-0.5">
       <button
         type="button"
-        aria-label={`${expanded ? "Collapse" : "Expand"} Folders`}
+        aria-label={expanded ? t("Collapse Folders") : t("Expand Folders")}
         aria-expanded={expanded}
         aria-controls={contentId}
         onClick={() => onCollapsedChange(!collapsed)}

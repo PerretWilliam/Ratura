@@ -307,8 +307,9 @@ export function GeneralSettingsSection() {
               <h2 className="text-xl font-medium">{t("Enable Folders")}</h2>
             </div>
             <p className="text-sm text-text-muted max-w-lg">
-              Create and view nested folders to organize your notes. When off,
-              notes are shown in a flat list sorted by date.
+              {t(
+                "Create and view nested folders to organize your notes. When off, notes are shown in a flat list sorted by date.",
+              )}
             </p>
           </div>
           <FoldersToggle />
@@ -349,7 +350,7 @@ export function GeneralSettingsSection() {
         {!gitEnabled ? null : !gitAvailable ? (
           <div className="bg-bg-secondary rounded-[10px] border border-border p-4">
             <p className="text-sm text-text-muted">
-              Git is not available on this system.{" "}
+              {t("Git is not available on this system.")}{" "}
               <a
                 href="https://git-scm.com/downloads"
                 target="_blank"
@@ -358,7 +359,7 @@ export function GeneralSettingsSection() {
               >
                 {t("Install Git")}
               </a>{" "}
-              to enable version control.
+              {t("to enable version control.")}
             </p>
           </div>
         ) : isLoading ? (
@@ -429,7 +430,7 @@ export function GeneralSettingsSection() {
                               {t("Saving...")}
                             </>
                           ) : (
-                            "Save"
+                            t("Save")
                           )}
                         </Button>
                         <Button
@@ -572,7 +573,7 @@ export function GeneralSettingsSection() {
                               {t("Connecting...")}
                             </>
                           ) : (
-                            "Connect"
+                            t("Connect")
                           )}
                         </Button>
                         <Button
@@ -617,8 +618,9 @@ export function GeneralSettingsSection() {
                         {t("Changes to commit")}
                       </span>
                       <span className="text-sm text-text-muted">
-                        {status.changedCount} file
-                        {status.changedCount === 1 ? "" : "s"} changed
+                        {status.changedCount === 1
+                          ? t("1 file changed")
+                          : t("{count} files changed", { count: status.changedCount })}
                       </span>
                     </div>
                   )}
@@ -629,8 +631,9 @@ export function GeneralSettingsSection() {
                         {t("Commits to push")}
                       </span>
                       <span className="text-sm text-text-muted">
-                        {status.aheadCount} commit
-                        {status.aheadCount === 1 ? "" : "s"}
+                        {status.aheadCount === 1
+                          ? t("1 commit")
+                          : t("{count} commits", { count: status.aheadCount })}
                       </span>
                     </div>
                   )}
@@ -641,8 +644,9 @@ export function GeneralSettingsSection() {
                         {t("Commits to pull")}
                       </span>
                       <span className="text-sm text-text-muted">
-                        {status.behindCount} commit
-                        {status.behindCount === 1 ? "" : "s"}
+                        {status.behindCount === 1
+                          ? t("1 commit")
+                          : t("{count} commits", { count: status.behindCount })}
                       </span>
                     </div>
                   )}
@@ -703,7 +707,7 @@ export function GeneralSettingsSection() {
             />
           </div>
           <div className="text-2xs text-text-muted font-mono p-2 rounded-md bg-bg-muted mb-4">
-            Preview: {previewNoteName}
+            {t("Preview: {name}", { name: previewNoteName })}
           </div>
 
           {/* Template Tags Reference */}
@@ -740,7 +744,7 @@ export function GeneralSettingsSection() {
                 <span>1, 2, 3...</span>
               </div>
               <p className="text-xs mt-2 pt-2 border-t border-border">
-                Examples: <code>Note-{"{year}-{month}-{day}"}</code>
+                {t("Examples:")} <code>Note-{"{year}-{month}-{day}"}</code>
               </p>
             </div>
           </details>

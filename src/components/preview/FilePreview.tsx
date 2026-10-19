@@ -112,7 +112,7 @@ export function FilePreview({
           {onToggleSidebar && (
             <IconButton
               onClick={onToggleSidebar}
-              title={sidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
+              title={sidebarVisible ? t("Hide Sidebar") : t("Show Sidebar")}
             >
               <PanelLeftIcon className="w-4.25 h-4.25 stroke-[1.5]" />
             </IconButton>

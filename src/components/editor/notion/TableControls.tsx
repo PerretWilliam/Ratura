@@ -61,7 +61,7 @@ import {
   type TableEdgeDragAxis,
 } from "./tableEdgeDrag";
 import { resolveTableAutoScrollDelta } from "./tableAutoScroll";
-import { useT, type Message } from "../../../i18n";
+import { msg, useT, type Message } from "../../../i18n";
 
 interface TableSelectionContext {
   tablePos: number;
@@ -85,14 +85,14 @@ interface TableDragIndicator {
 }
 
 const TABLE_BACKGROUND_COLOR_NAMES = [
-  "Gray",
-  "Red",
-  "Orange",
-  "Yellow",
-  "Green",
-  "Blue",
-  "Purple",
-  "Pink",
+  msg("Gray"),
+  msg("Red"),
+  msg("Orange"),
+  msg("Yellow"),
+  msg("Green"),
+  msg("Blue"),
+  msg("Purple"),
+  msg("Pink"),
 ] as const;
 
 // Row/column reorder grips and edge add controls are intentionally withheld
@@ -1681,7 +1681,11 @@ export function TableControls({ editor }: { editor: Editor }) {
           <div
             className="notion-table-color-palette"
             role="group"
-            aria-label={`${colorTarget === "row" ? "Row" : "Column"} background colors`}
+            aria-label={
+              colorTarget === "row"
+                ? t("Row background colors")
+                : t("Column background colors")
+            }
           >
             {TABLE_BACKGROUND_COLOR_OPTIONS.map((option, index) => {
               const name = TABLE_BACKGROUND_COLOR_NAMES[index];
@@ -1690,8 +1694,12 @@ export function TableControls({ editor }: { editor: Editor }) {
                   key={option.value}
                   type="button"
                   className="notion-table-color-swatch"
-                  aria-label={`${name} ${colorTarget} background`}
-                  title={name}
+                  aria-label={
+                    colorTarget === "row"
+                      ? t("{color} row background", { color: t(name) })
+                      : t("{color} column background", { color: t(name) })
+                  }
+                  title={t(name)}
                   style={{
                     "--scratch-table-swatch-light": option.light,
                     "--scratch-table-swatch-dark": option.dark,

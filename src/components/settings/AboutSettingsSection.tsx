@@ -44,7 +44,7 @@ export function AboutSettingsSection() {
       <section className="pb-2">
         <h2 className="text-xl font-medium mb-0.5">{t("Version")}</h2>
         <p className="text-sm text-text-muted mb-4">
-          You are currently using Ratura v{appVersion || "..."}
+          {t("You are currently using Ratura v{version}", { version: appVersion || "..." })}
         </p>
         <Button
           onClick={handleCheckForUpdates}

@@ -4,6 +4,14 @@ All notable changes to Ratura are documented here. The format follows [Keep a Ch
 
 Each release's notes on GitHub are taken from its section below, so add a section for the new version before bumping it.
 
+## [1.2.1] - 2026-10-19
+
+### Changed
+- Dragging a block now outlines the whole block, shows a preview of it under the pointer and keeps the grabbing cursor until you drop it. Hovering the grip outlines the block it will move.
+
+### Fixed
+- Translated the texts that were still in English: AI edit, update notice, Git and CLI settings, table colors, pin and delete menus, and a few tooltips.
+
 ## [1.2.0] - 2026-10-19
 
 ### Added

@@ -33,7 +33,7 @@ import type {
 import { FileTypeIcon } from "./FileTypeIcon";
 import { orderNoteListItems } from "../../lib/folderTree";
 import { SETTINGS_CHANGED_DOM_EVENT } from "../../lib/settingsScope";
-import { useT } from "../../i18n";
+import { t as tNow, useT } from "../../i18n";
 
 const menuItemClass =
   "px-3 py-1.5 text-sm text-text cursor-pointer outline-none hover:bg-bg-muted focus:bg-bg-muted flex items-center gap-2 rounded-sm";
@@ -55,7 +55,7 @@ function formatDate(timestamp: number): string {
     return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
   if (date >= startOfYesterday) {
-    return "Yesterday";
+    return tNow("Yesterday");
   }
 
   const daysAgo =
@@ -208,7 +208,7 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
         <ContextMenu.Content className="min-w-44 bg-bg border border-border rounded-md shadow-lg py-1 z-50">
           <ContextMenu.Item className={menuItemClass} onSelect={handlePin}>
             <PinIcon className="w-4 h-4 stroke-[1.6]" />
-            {isPinned ? "Unpin" : "Pin"}
+            {isPinned ? t("Unpin") : t("Pin")}
           </ContextMenu.Item>
           <ContextMenu.Item
             className={menuItemClass}
