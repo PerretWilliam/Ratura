@@ -69,7 +69,7 @@ function AppContent() {
     searchQuery,
     searchResults,
     reloadCurrentNote,
-    currentNote,
+    getCurrentNote,
     syncNotesFolder,
     goBack,
     goForward,
@@ -79,8 +79,6 @@ function AppContent() {
     isWindowSessionRestored,
   } = useNotes();
   const { reloadSettings } = useTheme();
-  const currentNoteRef = useRef(currentNote);
-  currentNoteRef.current = currentNote;
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [noteNavigatorOpen, setNoteNavigatorOpen] = useState(false);
   const [view, setView] = useState<ViewState>("notes");
@@ -223,6 +221,10 @@ function AppContent() {
     setView((previous) => (previous === "settings" ? "notes" : "settings"));
   }, [flushCurrentDraft, view]);
 
+  const handleEditorReady = useCallback((editor: TiptapEditor | null) => {
+    editorRef.current = editor;
+  }, []);
+
   const closeSettings = useCallback(() => {
     setView("notes");
   }, []);
@@ -238,6 +240,7 @@ function AppContent() {
   // AI Edit handler
   const handleAiEdit = useCallback(
     async (prompt: string, ollamaModel?: string) => {
+      const currentNote = getCurrentNote();
       if (!currentNote) {
         toast.error(t("No note selected"));
         return;
@@ -296,7 +299,7 @@ function AppContent() {
         setAiEditing(false);
       }
     },
-    [aiProvider, currentNote, reloadCurrentNote],
+    [aiProvider, getCurrentNote, reloadCurrentNote],
   );
 
   // Memoize display items to prevent unnecessary recalculations
@@ -312,7 +315,7 @@ function AppContent() {
       const isInInput =
         target.tagName === "INPUT" || target.tagName === "TEXTAREA";
       const isEditorEmpty =
-        isInEditor && currentNoteRef.current?.content.trim() === "";
+        isInEditor && getCurrentNote()?.content.trim() === "";
 
       // Block all other shortcuts when in settings view
       if (view === "settings") {
@@ -366,7 +369,7 @@ function AppContent() {
       // Cmd+G - Go to note
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "g") {
         e.preventDefault();
-        if (currentNoteRef.current) {
+        if (getCurrentNote()) {
           window.dispatchEvent(new CustomEvent("navigate-to-note"));
         } else {
           setNoteNavigatorOpen(true);
@@ -628,9 +631,7 @@ function AppContent() {
                 onToggleSidebar={toggleSidebar}
                 sidebarVisible={sidebarVisible}
                 focusMode={focusMode}
-                onEditorReady={(editor) => {
-                  editorRef.current = editor;
-                }}
+                onEditorReady={handleEditorReady}
               />
             )}
           </>

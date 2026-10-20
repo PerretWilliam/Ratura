@@ -12,6 +12,9 @@ Each release's notes on GitHub are taken from its section below, so add a sectio
 - Refreshing the note list reuses the previews of unchanged notes instead of re-reading every file.
 - Saving a note triggers a single list refresh instead of two, and the list only re-renders when something actually changed.
 - The crash-recovery copy taken while you type now waits for a pause between keystrokes, so it no longer competes with typing on long notes.
+- Saving no longer re-renders the sidebar and note lists: the open note has its own context, and the sidebar and editor skip renders their parent triggers.
+- Long note lists stay smooth: rows scrolled out of view skip layout and paint.
+- Notes with plain tables save faster: the note is only re-read after conversion when a table cell holds lists or other blocks.
 
 ## [1.2.2] - 2026-10-19
 

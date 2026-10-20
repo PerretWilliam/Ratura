@@ -125,6 +125,20 @@ describe("Scratch Markdown document adapter", () => {
     editor.destroy();
   });
 
+  it("saves a plain-text table without re-parsing the whole note", () => {
+    const editor = createTableEditor();
+    const manager = editor.storage.markdown.manager;
+    const parse = vi.spyOn(manager, "parse");
+
+    serializeMarkdownDocument(manager, {
+      type: "doc",
+      content: [table("First", { columns: [180, 260] })],
+    });
+
+    expect(parse).not.toHaveBeenCalled();
+    editor.destroy();
+  });
+
   it("reopens the exact widths committed by a live column resize", () => {
     const editor = createTableEditor();
     editor.commands.setContent({

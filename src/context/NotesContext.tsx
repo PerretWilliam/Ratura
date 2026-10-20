@@ -55,7 +55,6 @@ interface NotesDataContextValue {
   attachments: AttachmentMetadata[];
   selectedNoteId: string | null;
   selectedAttachment: AttachmentMetadata | null;
-  currentNote: Note | null;
   notesFolder: string | null;
   isLoading: boolean;
   error: string | null;
@@ -112,6 +111,8 @@ interface NotesActionsContextValue {
   moveFolder: (path: string, targetParent: string) => Promise<void>;
   goBack: () => Promise<void>;
   goForward: () => Promise<void>;
+  /** Reads the open note without subscribing to its changes. */
+  getCurrentNote: () => Note | null;
 }
 
 function sameFlatRecords<T extends object>(a: T[], b: T[]): boolean {
@@ -126,6 +127,9 @@ function sameFlatRecords<T extends object>(a: T[], b: T[]): boolean {
 
 const NotesDataContext = createContext<NotesDataContextValue | null>(null);
 const NotesActionsContext = createContext<NotesActionsContextValue | null>(null);
+// The open note changes on every save, so it has its own context: only the
+// components that show it re-render
+const CurrentNoteContext = createContext<Note | null>(null);
 
 type NavState = { history: string[]; index: number };
 
@@ -359,6 +363,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     const ok = await loadNoteById(history[newIndex]);
     if (ok) setNav((prev) => ({ ...prev, index: newIndex }));
   }, [loadNoteById]);
+
+  const getCurrentNote = useCallback(() => currentNoteRef.current, []);
 
   const selectAttachment = useCallback((attachment: AttachmentMetadata) => {
     selectRequestIdRef.current += 1;
@@ -1315,7 +1321,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       attachments,
       selectedNoteId,
       selectedAttachment,
-      currentNote,
       notesFolder,
       isLoading,
       error,
@@ -1335,7 +1340,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       attachments,
       selectedNoteId,
       selectedAttachment,
-      currentNote,
       notesFolder,
       isLoading,
       error,
@@ -1385,6 +1389,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       moveFolder: moveFolderAction,
       goBack,
       goForward,
+      getCurrentNote,
     }),
     [
       selectNote,
@@ -1417,13 +1422,16 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       moveFolderAction,
       goBack,
       goForward,
+      getCurrentNote,
     ]
   );
 
   return (
     <NotesActionsContext.Provider value={actionsValue}>
       <NotesDataContext.Provider value={dataValue}>
-        {children}
+        <CurrentNoteContext.Provider value={currentNote}>
+          {children}
+        </CurrentNoteContext.Provider>
       </NotesDataContext.Provider>
     </NotesActionsContext.Provider>
   );
@@ -1447,7 +1455,12 @@ export function useNotesActions() {
   return context;
 }
 
-// Combined hook for convenience (backward compatible)
+// The open note; re-renders the caller on every save
+export function useCurrentNote() {
+  return useContext(CurrentNoteContext);
+}
+
+// Data and actions, without the open note
 export function useNotes() {
   const data = useNotesData();
   const actions = useNotesActions();
@@ -1458,6 +1471,7 @@ export function useNotes() {
 export function useOptionalNotes() {
   const data = useContext(NotesDataContext);
   const actions = useContext(NotesActionsContext);
+  const currentNote = useContext(CurrentNoteContext);
   if (!data || !actions) return null;
-  return { ...data, ...actions };
+  return { ...data, ...actions, currentNote };
 }

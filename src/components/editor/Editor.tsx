@@ -1,4 +1,5 @@
 import {
+  memo,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -812,7 +813,7 @@ function getTopLevelImageDropBlocks(
   return blocks;
 }
 
-export function Editor({
+export const Editor = memo(function Editor({
   onToggleSidebar,
   sidebarVisible,
   focusMode,
@@ -4030,4 +4031,4 @@ export function Editor({
       </div>
     </div>
   );
-}
+});

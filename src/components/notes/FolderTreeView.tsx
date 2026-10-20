@@ -172,7 +172,7 @@ const FileItem = memo(function FileItem({
           }}
           {...attributes}
           {...listeners}
-          className={`flex items-center gap-1.5 py-1.5 cursor-pointer rounded-md select-none transition-colors ${
+          className={`note-tree-row flex items-center gap-1.5 py-1.5 cursor-pointer rounded-md select-none transition-colors ${
             isDragging
               ? "opacity-40"
               : isOver

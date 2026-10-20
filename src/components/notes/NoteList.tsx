@@ -130,6 +130,7 @@ export const NoteItem = memo(function NoteItem({
         isSelected={isSelected}
         isPinned={isPinned}
         onClick={handleClick}
+        className="note-list-row"
       />
     </div>
   );
