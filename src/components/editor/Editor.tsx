@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   useEditor,
+  useEditorState,
   EditorContent,
   ReactRenderer,
   ReactNodeViewRenderer,
@@ -440,8 +441,6 @@ interface FormatBarProps {
   onAddImage: () => void;
 }
 
-// FormatBar must re-render with parent to reflect editor.isActive() state changes
-// (editor instance is mutable, so memo would cause stale active states)
 function FormatBar({
   editor,
   onAddLink,
@@ -450,35 +449,63 @@ function FormatBar({
 }: FormatBarProps) {
   const t = useT();
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
+  // Subscribes the bar alone to selection changes, so the editor around it
+  // does not re-render on every keystroke
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: current }) => ({
+      bold: current?.isActive("bold") ?? false,
+      italic: current?.isActive("italic") ?? false,
+      strike: current?.isActive("strike") ?? false,
+      highlight: current?.isActive("highlight") ?? false,
+      heading1: current?.isActive("heading", { level: 1 }) ?? false,
+      heading2: current?.isActive("heading", { level: 2 }) ?? false,
+      heading3: current?.isActive("heading", { level: 3 }) ?? false,
+      heading4: current?.isActive("heading", { level: 4 }) ?? false,
+      bulletList: current?.isActive("bulletList") ?? false,
+      orderedList: current?.isActive("orderedList") ?? false,
+      taskList: current?.isActive("taskList") ?? false,
+      blockquote: current?.isActive("blockquote") ?? false,
+      alerts: ALERT_TYPES.map(
+        (alertType) =>
+          current?.isActive("alertBlockquote", { alertType }) ?? false,
+      ),
+      code: current?.isActive("code") ?? false,
+      codeBlock: current?.isActive("codeBlock") ?? false,
+      blockMath: current?.isActive("blockMath") ?? false,
+      link: current?.isActive("link") ?? false,
+      table: current?.isActive("table") ?? false,
+    }),
+  });
 
-  if (!editor) return null;
+  if (!editor || !active) return null;
 
   return (
     <div className="flex items-center gap-1 px-3 pb-2 border-b border-border overflow-x-auto scrollbar-none">
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
-        isActive={editor.isActive("bold")}
+        isActive={active.bold}
         title={t("Bold ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}B` })}
       >
         <BoldIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        isActive={editor.isActive("italic")}
+        isActive={active.italic}
         title={t("Italic ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}I` })}
       >
         <ItalicIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleStrike().run()}
-        isActive={editor.isActive("strike")}
+        isActive={active.strike}
         title={t("Strikethrough ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}S` })}
       >
         <StrikethroughIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHighlight().run()}
-        isActive={editor.isActive("highlight")}
+        isActive={active.highlight}
         title={t("Highlight ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}H` })}
       >
         <HighlighterIcon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -488,28 +515,28 @@ function FormatBar({
 
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        isActive={editor.isActive("heading", { level: 1 })}
+        isActive={active.heading1}
         title={t("Heading 1 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}1` })}
       >
         <Heading1Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        isActive={editor.isActive("heading", { level: 2 })}
+        isActive={active.heading2}
         title={t("Heading 2 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}2` })}
       >
         <Heading2Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        isActive={editor.isActive("heading", { level: 3 })}
+        isActive={active.heading3}
         title={t("Heading 3 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}3` })}
       >
         <Heading3Icon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
-        isActive={editor.isActive("heading", { level: 4 })}
+        isActive={active.heading4}
         title={t("Heading 4 ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}4` })}
       >
         <Heading4Icon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -519,33 +546,33 @@ function FormatBar({
 
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        isActive={editor.isActive("bulletList")}
+        isActive={active.bulletList}
         title={t("Bullet List ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}8` })}
       >
         <ListIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        isActive={editor.isActive("orderedList")}
+        isActive={active.orderedList}
         title={t("Numbered List ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}7` })}
       >
         <ListOrderedIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleTaskList().run()}
-        isActive={editor.isActive("taskList")}
+        isActive={active.taskList}
         title={t("Task List")}
       >
         <CheckSquareIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        isActive={editor.isActive("blockquote")}
+        isActive={active.blockquote}
         title={t("Blockquote ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${shift}${isMac ? "" : "+"}B` })}
       >
         <QuoteIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
-      {ALERT_TYPES.map((alertType) => {
+      {ALERT_TYPES.map((alertType, index) => {
         const { label, color } = ALERT_META[alertType];
         return (
           <ToolbarButton
@@ -553,7 +580,7 @@ function FormatBar({
             onClick={() =>
               editor.chain().focus().wrapIn("alertBlockquote", { alertType }).run()
             }
-            isActive={editor.isActive("alertBlockquote", { alertType })}
+            isActive={active.alerts[index]}
             title={t("Alert: {label}", { label: t(label) })}
           >
             <span className="relative flex items-center justify-center">
@@ -568,21 +595,21 @@ function FormatBar({
       })}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleCode().run()}
-        isActive={editor.isActive("code")}
+        isActive={active.code}
         title={t("Inline Code ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}E` })}
       >
         <InlineCodeIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => toggleCodeBlockAtCursor(editor)}
-        isActive={editor.isActive("codeBlock")}
+        isActive={active.codeBlock}
         title={t("Code Block ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}${alt}${isMac ? "" : "+"}C` })}
       >
         <CodeIcon className="w-4.5 h-4.5 stroke-[1.5]" />
       </ToolbarButton>
       <ToolbarButton
         onClick={onAddBlockMath}
-        isActive={editor.isActive("blockMath")}
+        isActive={active.blockMath}
         title={t("Block Math")}
       >
         <BlockMathIcon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -599,7 +626,7 @@ function FormatBar({
 
       <ToolbarButton
         onClick={onAddLink}
-        isActive={editor.isActive("link")}
+        isActive={active.link}
         title={t("Add Link ({shortcut})", { shortcut: `${mod}${isMac ? "" : "+"}K` })}
       >
         <LinkIcon className="w-4.5 h-4.5 stroke-[1.5]" />
@@ -617,7 +644,7 @@ function FormatBar({
       <DropdownMenu.Root open={tableMenuOpen} onOpenChange={setTableMenuOpen}>
         <Tooltip content={t("Insert Table")}>
           <DropdownMenu.Trigger asChild>
-            <ToolbarButton isActive={editor.isActive("table")}>
+            <ToolbarButton isActive={active.table}>
               <TableIcon className="w-4.5 h-4.5 stroke-[1.5]" />
             </ToolbarButton>
           </DropdownMenu.Trigger>
@@ -844,7 +871,6 @@ export function Editor({
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   // Force re-render when selection changes to update toolbar active states
-  const [, setSelectionKey] = useState(0);
   const [copyMenuOpen, setCopyMenuOpen] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
   const titleBarNoteInfo = currentNote
@@ -2062,10 +2088,6 @@ export function Editor({
       if (isLoadingRef.current) return;
       if (transaction.getMeta("scratchTableRowResizePreview")) return;
       scheduleSave();
-    },
-    onSelectionUpdate: () => {
-      // Trigger re-render to update toolbar active states
-      setSelectionKey((k) => k + 1);
     },
     // Prevent flash of unstyled content during initial render
     immediatelyRender: false,

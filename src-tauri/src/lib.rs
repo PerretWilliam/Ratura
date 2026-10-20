@@ -1544,6 +1544,37 @@ fn extract_title(content: &str) -> String {
 }
 
 // Utility: Generate preview from content (strip markdown formatting)
+/// Previews keyed by path, reused while the file's mtime and size are unchanged,
+/// so refreshing the note list does not re-read every note.
+/// ponytail: entries for deleted files linger until restart; prune if vaults get huge.
+type PreviewCacheEntry = (std::time::SystemTime, u64, String);
+static NOTE_PREVIEW_CACHE: std::sync::LazyLock<Mutex<HashMap<PathBuf, PreviewCacheEntry>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Returns the note's preview, or None when the file cannot be read.
+fn cached_note_preview(
+    file_path: &Path,
+    mtime: Option<std::time::SystemTime>,
+    size: u64,
+) -> Option<String> {
+    if let Some(mtime) = mtime {
+        let cache = NOTE_PREVIEW_CACHE.lock().expect("preview cache lock");
+        if let Some((cached_mtime, cached_size, preview)) = cache.get(file_path) {
+            if *cached_mtime == mtime && *cached_size == size {
+                return Some(preview.clone());
+            }
+        }
+    }
+    let preview = generate_preview(&std::fs::read_to_string(file_path).ok()?);
+    if let Some(mtime) = mtime {
+        NOTE_PREVIEW_CACHE
+            .lock()
+            .expect("preview cache lock")
+            .insert(file_path.to_path_buf(), (mtime, size, preview.clone()));
+    }
+    Some(preview)
+}
+
 fn generate_preview(content: &str) -> String {
     let body = strip_frontmatter(content);
     // First text line, skipping a leading H1 that usually repeats the name
@@ -2508,16 +2539,15 @@ async fn list_notes(
                 continue;
             }
             if let Some(id) = id_from_abs_path(&path_clone, file_path, &ignored_dirs) {
-                if let Ok(content) = std::fs::read_to_string(file_path) {
-                    let modified = entry
-                        .metadata()
-                        .ok()
-                        .and_then(|m| m.modified().ok())
+                let metadata = entry.metadata().ok();
+                let mtime = metadata.as_ref().and_then(|m| m.modified().ok());
+                let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+                if let Some(preview) = cached_note_preview(file_path, mtime, size) {
+                    let modified = mtime
                         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                         .map(|d| d.as_secs() as i64)
                         .unwrap_or(0);
                     let title = note_title(&id);
-                    let preview = generate_preview(&content);
                     results.push((id, title, preview, modified));
                 }
             }
@@ -7487,6 +7517,27 @@ mod standalone_window_tests {
     fn normal_launch_shows_main_even_when_no_workspace_can_be_restored() {
         assert!(should_show_main_window(false));
         assert!(!should_show_main_window(true));
+    }
+}
+
+#[cfg(test)]
+mod note_preview_cache_tests {
+    use super::cached_note_preview;
+
+    #[test]
+    fn refreshes_the_preview_when_the_file_changes() {
+        let path =
+            std::env::temp_dir().join(format!("ratura-preview-cache-{}.md", std::process::id()));
+        let preview_of = |content: &str| {
+            std::fs::write(&path, content).unwrap();
+            let metadata = std::fs::metadata(&path).unwrap();
+            cached_note_preview(&path, metadata.modified().ok(), metadata.len())
+        };
+
+        assert_eq!(preview_of("first").as_deref(), Some("first"));
+        assert_eq!(preview_of("second line").as_deref(), Some("second line"));
+        std::fs::remove_file(&path).unwrap();
+        assert_eq!(cached_note_preview(&path, None, 0), None);
     }
 }
 

@@ -114,6 +114,16 @@ interface NotesActionsContextValue {
   goForward: () => Promise<void>;
 }
 
+function sameFlatRecords<T extends object>(a: T[], b: T[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((item, index) => {
+      const other = b[index] as Record<string, unknown>;
+      return Object.entries(item).every(([key, value]) => other[key] === value);
+    })
+  );
+}
+
 const NotesDataContext = createContext<NotesDataContextValue | null>(null);
 const NotesActionsContext = createContext<NotesActionsContextValue | null>(null);
 
@@ -260,10 +270,15 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const refreshNotes = useCallback(async () => {
     if (!notesFolder) return;
     try {
-      const notesList = await notesService.listNotes();
-      const attachmentsList = await notesService.listAttachments();
-      setNotes(notesList);
-      setAttachments(attachmentsList);
+      const [notesList, attachmentsList] = await Promise.all([
+        notesService.listNotes(),
+        notesService.listAttachments(),
+      ]);
+      // Keep the previous arrays when nothing changed so subscribers skip a render
+      setNotes((prev) => (sameFlatRecords(prev, notesList) ? prev : notesList));
+      setAttachments((prev) =>
+        sameFlatRecords(prev, attachmentsList) ? prev : attachmentsList,
+      );
       setSelectedAttachment((prev) => {
         if (!prev) return prev;
         return attachmentsList.find((attachment) => attachment.id === prev.id) ?? null;
@@ -991,8 +1006,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     setHasExternalChanges(false);
     setNoteConflict(null);
 
-    const notesList = await notesService.listNotes();
-    const attachmentsList = await notesService.listAttachments();
+    const [notesList, attachmentsList] = await Promise.all([
+      notesService.listNotes(),
+      notesService.listAttachments(),
+    ]);
     setNotes(notesList);
     setAttachments(attachmentsList);
     await restoreWorkspaceSession(path, notesList);
@@ -1133,8 +1150,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         const folder = await notesService.getNotesFolder();
         setNotesFolderState(folder);
         if (folder) {
-          const notesList = await notesService.listNotes();
-          const attachmentsList = await notesService.listAttachments();
+          const [notesList, attachmentsList] = await Promise.all([
+            notesService.listNotes(),
+            notesService.listAttachments(),
+          ]);
           setNotes(notesList);
           setAttachments(attachmentsList);
           await restoreWorkspaceSession(folder, notesList);
@@ -1177,7 +1196,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const changedIds = event.payload.changed_ids || [];
       const changedPaths = (event.payload as { changed_paths?: string[] }).changed_paths || [];
       if (changedIds.length === 0 && changedPaths.length === 0) return;
-      void refreshNotes();
+      scheduleRefresh();
 
       const currentAttachment = selectedAttachmentRef.current;
       if (currentAttachment && changedPaths.includes(currentAttachment.path)) {
@@ -1265,7 +1284,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         unlisten();
       }
     };
-  }, [refreshNotes]);
+  }, [scheduleRefresh]);
 
   // Listen for "select-note" events from the backend (CLI, drag-drop, Open With, import from preview)
   useEffect(() => {
