@@ -434,6 +434,22 @@ function GridPicker({ onSelect }: GridPickerProps) {
   );
 }
 
+const CHECKPOINT_IDLE_TIMEOUT_MS = 500;
+
+// Runs work while the webview is idle (between keystrokes), with a deadline so
+// it always happens. Webviews without requestIdleCallback run it right away.
+function runWhenIdle(
+  work: () => void,
+  timeout: number,
+): (() => void) | null {
+  if (typeof window.requestIdleCallback !== "function") {
+    work();
+    return null;
+  }
+  const handle = window.requestIdleCallback(work, { timeout });
+  return () => window.cancelIdleCallback(handle);
+}
+
 interface FormatBarProps {
   editor: TiptapEditor | null;
   onAddLink: () => void;
@@ -921,6 +937,7 @@ export function Editor({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<number | null>(null);
   const checkpointCaptureTimerRef = useRef<number | null>(null);
+  const cancelCheckpointIdleRef = useRef<(() => void) | null>(null);
   const checkpointCaptureStartedAtRef = useRef<number | null>(null);
   const queueCheckpointCaptureRef = useRef<() => void>(() => undefined);
   const checkpointSchedulerRef = useRef<DraftCheckpointScheduler | null>(null);
@@ -1305,6 +1322,8 @@ export function Editor({
         checkpointCaptureTimerRef.current = null;
         checkpointCaptureStartedAtRef.current = null;
       }
+      cancelCheckpointIdleRef.current?.();
+      cancelCheckpointIdleRef.current = null;
       checkpointSchedulerRef.current?.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1330,7 +1349,11 @@ export function Editor({
     checkpointCaptureTimerRef.current = window.setTimeout(() => {
       checkpointCaptureTimerRef.current = null;
       checkpointCaptureStartedAtRef.current = null;
-      void persistCurrentCrashCheckpoint();
+      if (cancelCheckpointIdleRef.current) return;
+      cancelCheckpointIdleRef.current = runWhenIdle(() => {
+        cancelCheckpointIdleRef.current = null;
+        void persistCurrentCrashCheckpoint();
+      }, CHECKPOINT_IDLE_TIMEOUT_MS);
     }, delay);
   };
 
@@ -1341,6 +1364,8 @@ export function Editor({
         clearTimeout(checkpointCaptureTimerRef.current);
         checkpointCaptureTimerRef.current = null;
       }
+      cancelCheckpointIdleRef.current?.();
+      cancelCheckpointIdleRef.current = null;
       checkpointCaptureStartedAtRef.current = null;
       void persistCurrentCrashCheckpoint();
     };
@@ -2633,6 +2658,8 @@ export function Editor({
         clearTimeout(checkpointCaptureTimerRef.current);
         checkpointCaptureStartedAtRef.current = null;
       }
+      cancelCheckpointIdleRef.current?.();
+      cancelCheckpointIdleRef.current = null;
       if (checkpointSchedulerRef.current) {
         void checkpointSchedulerRef.current.dispose().catch((error) => {
           console.error("Failed to dispose checkpoint scheduler:", error);
