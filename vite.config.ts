@@ -63,8 +63,6 @@ export default defineConfig(async () => ({
           ],
           // Syntax highlighting
           "highlight": ["lowlight", "highlight.js"],
-          // React core
-          "react-vendor": ["react", "react-dom"],
           // Tauri APIs
           "tauri": [
             "@tauri-apps/api",

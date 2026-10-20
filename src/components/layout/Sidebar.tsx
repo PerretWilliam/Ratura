@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { toast } from "sonner";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -53,7 +53,7 @@ export function getWorkspaceSwitchErrorMessage(error: unknown): string {
     : tNow("Could not switch folder");
 }
 
-export function Sidebar({ onOpenSettings }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ onOpenSettings }: SidebarProps) {
   const t = useT();
   const {
     createNote,
@@ -634,4 +634,4 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
       </DragOverlay>
     </DndContext>
   );
-}
+});

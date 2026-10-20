@@ -55,7 +55,6 @@ interface NotesDataContextValue {
   attachments: AttachmentMetadata[];
   selectedNoteId: string | null;
   selectedAttachment: AttachmentMetadata | null;
-  currentNote: Note | null;
   notesFolder: string | null;
   isLoading: boolean;
   error: string | null;
@@ -112,10 +111,25 @@ interface NotesActionsContextValue {
   moveFolder: (path: string, targetParent: string) => Promise<void>;
   goBack: () => Promise<void>;
   goForward: () => Promise<void>;
+  /** Reads the open note without subscribing to its changes. */
+  getCurrentNote: () => Note | null;
+}
+
+function sameFlatRecords<T extends object>(a: T[], b: T[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((item, index) => {
+      const other = b[index] as Record<string, unknown>;
+      return Object.entries(item).every(([key, value]) => other[key] === value);
+    })
+  );
 }
 
 const NotesDataContext = createContext<NotesDataContextValue | null>(null);
 const NotesActionsContext = createContext<NotesActionsContextValue | null>(null);
+// The open note changes on every save, so it has its own context: only the
+// components that show it re-render
+const CurrentNoteContext = createContext<Note | null>(null);
 
 type NavState = { history: string[]; index: number };
 
@@ -260,10 +274,15 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const refreshNotes = useCallback(async () => {
     if (!notesFolder) return;
     try {
-      const notesList = await notesService.listNotes();
-      const attachmentsList = await notesService.listAttachments();
-      setNotes(notesList);
-      setAttachments(attachmentsList);
+      const [notesList, attachmentsList] = await Promise.all([
+        notesService.listNotes(),
+        notesService.listAttachments(),
+      ]);
+      // Keep the previous arrays when nothing changed so subscribers skip a render
+      setNotes((prev) => (sameFlatRecords(prev, notesList) ? prev : notesList));
+      setAttachments((prev) =>
+        sameFlatRecords(prev, attachmentsList) ? prev : attachmentsList,
+      );
       setSelectedAttachment((prev) => {
         if (!prev) return prev;
         return attachmentsList.find((attachment) => attachment.id === prev.id) ?? null;
@@ -344,6 +363,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     const ok = await loadNoteById(history[newIndex]);
     if (ok) setNav((prev) => ({ ...prev, index: newIndex }));
   }, [loadNoteById]);
+
+  const getCurrentNote = useCallback(() => currentNoteRef.current, []);
 
   const selectAttachment = useCallback((attachment: AttachmentMetadata) => {
     selectRequestIdRef.current += 1;
@@ -991,8 +1012,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     setHasExternalChanges(false);
     setNoteConflict(null);
 
-    const notesList = await notesService.listNotes();
-    const attachmentsList = await notesService.listAttachments();
+    const [notesList, attachmentsList] = await Promise.all([
+      notesService.listNotes(),
+      notesService.listAttachments(),
+    ]);
     setNotes(notesList);
     setAttachments(attachmentsList);
     await restoreWorkspaceSession(path, notesList);
@@ -1133,8 +1156,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         const folder = await notesService.getNotesFolder();
         setNotesFolderState(folder);
         if (folder) {
-          const notesList = await notesService.listNotes();
-          const attachmentsList = await notesService.listAttachments();
+          const [notesList, attachmentsList] = await Promise.all([
+            notesService.listNotes(),
+            notesService.listAttachments(),
+          ]);
           setNotes(notesList);
           setAttachments(attachmentsList);
           await restoreWorkspaceSession(folder, notesList);
@@ -1177,7 +1202,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const changedIds = event.payload.changed_ids || [];
       const changedPaths = (event.payload as { changed_paths?: string[] }).changed_paths || [];
       if (changedIds.length === 0 && changedPaths.length === 0) return;
-      void refreshNotes();
+      scheduleRefresh();
 
       const currentAttachment = selectedAttachmentRef.current;
       if (currentAttachment && changedPaths.includes(currentAttachment.path)) {
@@ -1265,7 +1290,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         unlisten();
       }
     };
-  }, [refreshNotes]);
+  }, [scheduleRefresh]);
 
   // Listen for "select-note" events from the backend (CLI, drag-drop, Open With, import from preview)
   useEffect(() => {
@@ -1296,7 +1321,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       attachments,
       selectedNoteId,
       selectedAttachment,
-      currentNote,
       notesFolder,
       isLoading,
       error,
@@ -1316,7 +1340,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       attachments,
       selectedNoteId,
       selectedAttachment,
-      currentNote,
       notesFolder,
       isLoading,
       error,
@@ -1366,6 +1389,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       moveFolder: moveFolderAction,
       goBack,
       goForward,
+      getCurrentNote,
     }),
     [
       selectNote,
@@ -1398,13 +1422,16 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       moveFolderAction,
       goBack,
       goForward,
+      getCurrentNote,
     ]
   );
 
   return (
     <NotesActionsContext.Provider value={actionsValue}>
       <NotesDataContext.Provider value={dataValue}>
-        {children}
+        <CurrentNoteContext.Provider value={currentNote}>
+          {children}
+        </CurrentNoteContext.Provider>
       </NotesDataContext.Provider>
     </NotesActionsContext.Provider>
   );
@@ -1428,7 +1455,12 @@ export function useNotesActions() {
   return context;
 }
 
-// Combined hook for convenience (backward compatible)
+// The open note; re-renders the caller on every save
+export function useCurrentNote() {
+  return useContext(CurrentNoteContext);
+}
+
+// Data and actions, without the open note
 export function useNotes() {
   const data = useNotesData();
   const actions = useNotesActions();
@@ -1439,6 +1471,7 @@ export function useNotes() {
 export function useOptionalNotes() {
   const data = useContext(NotesDataContext);
   const actions = useContext(NotesActionsContext);
+  const currentNote = useContext(CurrentNoteContext);
   if (!data || !actions) return null;
-  return { ...data, ...actions };
+  return { ...data, ...actions, currentNote };
 }

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
-import { useNotes } from "../../context/NotesContext";
+import { useCurrentNote, useNotes } from "../../context/NotesContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useGit } from "../../context/GitContext";
 import * as notesService from "../../services/notes";
@@ -90,12 +90,12 @@ export function CommandPalette({
     selectNote,
     createNote,
     deleteNote,
-    currentNote,
     refreshNotes,
     pinNote,
     unpinNote,
     notesFolder,
   } = useNotes();
+  const currentNote = useCurrentNote();
   const { setTheme } = useTheme();
   const { status, gitAvailable, gitEnabled, sync, isSyncing } = useGit();
   const [query, setQuery] = useState("");

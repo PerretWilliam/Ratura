@@ -2098,3 +2098,15 @@ body.notion-table-column-resizing * {
     pointer-events: auto;
   }
 }
+
+/* Off-screen note rows skip layout and paint, so long lists stay fast.
+   "auto" remembers each row's real height once it has been shown. */
+.note-list-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 58px;
+}
+
+.note-tree-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 32px;
+}

@@ -629,8 +629,16 @@ export function serializeMarkdownDocument(
   document: JSONContent,
 ): string {
   const markdown = manager.serialize(prepareTablesForMarkdown(document));
-  if (collectTables(document).length === 0) return markdown;
-  const visibleDocument = manager.parse(markdown);
+  const tables = collectTables(document);
+  if (tables.length === 0) return markdown;
+  // Re-parsing the whole note is only needed to record cells holding blocks
+  // (lists, code...), so plain tables skip it
+  const hasPreservedCells = tables.some((table) =>
+    table.content?.some((row) => row.content?.some(shouldPreserveCellBlocks)),
+  );
+  const visibleDocument = hasPreservedCells
+    ? manager.parse(markdown)
+    : { type: "doc", content: [] };
   return injectTableMetadata(
     markdown,
     collectTableGeometries(manager, document, visibleDocument),
